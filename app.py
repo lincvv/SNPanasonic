@@ -6,10 +6,13 @@ from tkinter import filedialog as fd
 from tkinter import messagebox as mb
 from main import Dump
 
+# 0x280020 - 19MK3
+
 
 class Main(tk.Frame):
     pattern_key = re.compile(rb'\w{5}-\w{5}-\w{5}-\w{5}-\w{5}', flags=re.ASCII)
     OFFSETS = (
+        0x280020,
         0x800020,
         0xA00020,
         0xA80020,
