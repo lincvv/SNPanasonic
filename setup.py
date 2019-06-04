@@ -1,7 +1,7 @@
 import os
 from cx_Freeze import setup, Executable
 
-__version__ = "1.1"
+__version__ = "1.2"
 
 os.environ['TCL_LIBRARY'] = "C:\\Python36\\tcl\\tcl8.6"
 os.environ['TK_LIBRARY'] = "C:\\Python36\\tcl\\tk8.6"
