@@ -7,6 +7,7 @@ from tkinter import messagebox as mb
 from main import Dump
 
 # 0x280020 - 19MK3
+# 0x600020 - 19MK4
 
 
 class Main(tk.Frame):
@@ -17,6 +18,7 @@ class Main(tk.Frame):
         0xA00020,
         0xA80020,
         0x580020,
+        0x600020,
     )
 
     def __init__(self, root):
