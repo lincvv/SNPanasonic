@@ -56,8 +56,9 @@ class Main(tk.Frame):
         btn_read_key.pack(side=tk.LEFT)
 
     def get_check_sn(self, file_name) -> str:
-        # check the serial number in the dump,
-        # if you need it then return
+        """ check the serial number in the dump,
+            if you need it then return """
+
         sn = None
         self.dump_obj = Dump(name_dump=file_name)
 
@@ -72,8 +73,9 @@ class Main(tk.Frame):
         return sn
 
     def open_file(self):
-        # open the file and return the file path,
-        # if there is no file, return -1
+        """ open the file and return the file path,
+        if there is no file, return -1 """
+
         file_path = fd.askopenfile()
         if file_path:
             self.set_label_file(F"File: {os.path.basename(file_path.name)}")
@@ -81,14 +83,16 @@ class Main(tk.Frame):
         return -1
 
     def set_key_info(self):
-        # message that the key is not found
+        """ message that the key is not found """
+
         msg_info = "OEM Product Key not found"
         mb.showinfo("info", msg_info)
         self.set_text(text_field="Key not found", font_txt_field="Verdana 10", text_lbl="OEM Key:")
 
     def open_file_oem(self):
-        # open the file to search for oem key
-        # and display it
+        """ open the file to search for oem key
+            and display it """
+
         file = self.open_file()
         if file != -1:
             with open(file, "r+b") as f:
@@ -109,7 +113,8 @@ class Main(tk.Frame):
                     )
 
     def open_file_sn(self):
-        # open file to search serial number
+        """ open file to search serial number """
+
         file = self.open_file()
         if file != -1:
             self.serial_number = self.get_check_sn(file)

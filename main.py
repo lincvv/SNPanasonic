@@ -37,7 +37,7 @@ class Dump:
         with open(file_name, 'wb') as file:
             file.write(self.dump_full.replace(self.sn_full_bytes, word_byte))
 
-    def _get_data(self, *, offset, count) -> bytes:
+    def _get_data(self, *, offset: int, count: int) -> bytes:
         # count -> number of bytes read
         # offset -> read start offset
         with open(self.path_dump, "rb") as file:
