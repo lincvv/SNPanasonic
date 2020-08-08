@@ -53,6 +53,7 @@ class Dump:
             # mm = mmap.mmap(file.fileno(), 0)
             offset_t = self.dump_full.find(self.misc_t, 0)
             offset_b = self.dump_full.find(self.misc_b, 0)
+            # TODO misc_b is different in dumps
             print(hex(offset_t))
             print(bool(offset_b))
             # print(mm.find(s_byte, 0))
