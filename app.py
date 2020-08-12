@@ -27,6 +27,8 @@ class Main(tk.Frame):
         self.save_img = None
         self.read_key_img = None
         self.serial_number = None
+        self.unlock_cam = None
+        self.fix_misc = None
         self.lab_file = None
         self.label_save = None
         self.label_value = None
@@ -41,14 +43,24 @@ class Main(tk.Frame):
         toolbar.pack(side=tk.TOP, fill=tk.X)
 
         self.read_img = tk.PhotoImage(file='img/open.gif')
-        btn_read = tk.Button(toolbar, text="Open File", bg="#FFFFFF", bd=2, command=self.open_file_sn,
+        btn_read = tk.Button(toolbar, text="Check SN", bg="#FFFFFF", bd=2, command=self.open_file_sn,
                              compound=tk.TOP, image=self.read_img)
         btn_read.pack(side=tk.LEFT)
 
         self.save_img = tk.PhotoImage(file='img/save.gif')
-        btn_save = tk.Button(toolbar, text="New SN", bg="#FFFFFF", bd=2, command=self.save_serial,
+        btn_save = tk.Button(toolbar, text="Save SN", bg="#FFFFFF", bd=2, command=self.save_serial,
                              compound=tk.TOP, image=self.save_img)
         btn_save.pack(side=tk.LEFT)
+
+        self.fix_misc = tk.PhotoImage(file='img/fix_misc.gif')
+        btn_fix_misc = tk.Button(toolbar, text="Fix MISC", bg="#FFFFFF", bd=2, command=self.open_file_oem,
+                                 compound=tk.TOP, image=self.fix_misc)
+        btn_fix_misc.pack(side=tk.LEFT)
+
+        self.unlock_cam = tk.PhotoImage(file='img/cam.gif')
+        btn_unlock_cam = tk.Button(toolbar, text="Unlock cam", bg="#FFFFFF", bd=2, command=self.open_file_oem,
+                                   compound=tk.TOP, image=self.unlock_cam)
+        btn_unlock_cam.pack(side=tk.LEFT)
 
         self.read_key_img = tk.PhotoImage(file='img/key.gif')
         btn_read_key = tk.Button(toolbar, text="OEM Key", bg="#FFFFFF", bd=2, command=self.open_file_oem,
@@ -177,7 +189,7 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = Main(root)
     app.pack()
-    root.title("SNPanasonic")
+    root.title("PanasonicTool")
     root.geometry("350x450+400+200")
     root.resizable(False, False)
     icon = tk.PhotoImage(file='img/p_blue.ico')
