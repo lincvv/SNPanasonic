@@ -27,7 +27,7 @@ class Main(tk.Frame):
         self.save_img = None
         self.read_key_img = None
         self.serial_number = None
-        self.unlock_cam = None
+        self.unlock_cam_img = None
         self.fix_misc = None
         self.lab_file = None
         self.label_save = None
@@ -57,9 +57,9 @@ class Main(tk.Frame):
                                  compound=tk.TOP, image=self.fix_misc)
         btn_fix_misc.pack(side=tk.LEFT)
 
-        self.unlock_cam = tk.PhotoImage(file='img/cam.gif')
-        btn_unlock_cam = tk.Button(toolbar, text="Unlock cam", bg="#FFFFFF", bd=2, command=self.open_file_oem,
-                                   compound=tk.TOP, image=self.unlock_cam)
+        self.unlock_cam_img = tk.PhotoImage(file='img/cam.gif')
+        btn_unlock_cam = tk.Button(toolbar, text="Unlock cam", bg="#FFFFFF", bd=2, command=self.unlock_cam,
+                                   compound=tk.TOP, image=self.unlock_cam_img)
         btn_unlock_cam.pack(side=tk.LEFT)
 
         self.read_key_img = tk.PhotoImage(file='img/key.gif')
@@ -100,6 +100,18 @@ class Main(tk.Frame):
         msg_info = "OEM Product Key not found"
         mb.showinfo("info", msg_info)
         self.set_text(text_field="Key not found", font_txt_field="Verdana 10", text_lbl="OEM Key:")
+
+    def unlock_cam(self):
+        """
+
+        :return:
+        """
+
+        file = self.open_file()
+        if file != -1:
+            with open(file, "r+b") as f:
+                with mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as mm:
+                    pass
 
     def open_file_oem(self):
         """ open the file to search for oem key
