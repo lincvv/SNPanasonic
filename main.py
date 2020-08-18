@@ -1,6 +1,7 @@
 import binascii
 import mmap
 
+
 class Dump:
 
     def __init__(self, name_dump):
@@ -8,7 +9,11 @@ class Dump:
         self.sn_full_bytes = bytearray()
         self.dump_full = None
         self.misc_b = bytearray(b'\x4E\x56\x41\x52\xEA\x02\xFF\xFF\xFF')
-        self.misc_t = bytearray(b'\x4E\x56\x41\x52\x8A\x00\xFF\xFF\xFF')
+        self.sig_misc_t = bytearray(b'\x4D\x69\x73\x63\x54\x61\x62\x6C\x65\x42\x61\x63\x6B\x75\x70')
+        self.sig_nvar_full = bytearray(b'\xA3\xB9\xF5\xCE\x6D\x47\x7F\x49\x9F\xDC\xE9\x81\x43\xE0\x42\x2C\x34\xAA'
+                                       b'\x01\x00\xB8\xFF\x03\xF8')
+        self.ful_size_nvar = '3FFB8'
+        self.ful_size_misk_t = '9B'
 
     def __repr__(self):
         return self.path_dump
@@ -51,7 +56,7 @@ class Dump:
             self.dump_full = file.read()
             # print(self.misc_t)
             # mm = mmap.mmap(file.fileno(), 0)
-            offset_t = self.dump_full.find(self.misc_t, 0)
+            offset_t = self.dump_full.find(self.sig_misc_t, 0)
             offset_b = self.dump_full.find(self.misc_b, 0)
             # TODO misc_b is different in dumps
             print(hex(offset_t))

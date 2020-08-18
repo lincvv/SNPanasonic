@@ -108,10 +108,48 @@ class Main(tk.Frame):
         """
 
         file = self.open_file()
+        self.dump_obj = Dump(name_dump=file)
         if file != -1:
             with open(file, "r+b") as f:
                 with mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as mm:
-                    pass
+                    nvar_ind = mm.find(self.dump_obj.sig_nvar_full)
+                    misk_t_ind = mm.find(self.dump_obj.sig_misc_t)
+                    t = mm.rfind(self.dump_obj.sig_nvar_full)
+                    print(hex(nvar_ind), hex(t))
+                    mm.seek(misk_t_ind - 11)
+                    misk_t_dump = mm.read(int(self.dump_obj.ful_size_misk_t, 16))
+                    print(misk_t_dump)
+                    mm.seek(nvar_ind)
+                    nvar_mod_old = mm.read(int(self.dump_obj.ful_size_nvar, 16))
+                    print(len(nvar_mod_old))
+
+                    with open("data/NVRAM_NVAR_store_full.ffs", "r+b") as f_nvar:
+                        with mmap.mmap(f_nvar.fileno(), 0, access=mmap.ACCESS_READ) as mm_nvar:
+                            print(mm_nvar.size() == len(nvar_mod_old))
+                            print(mm.size())
+                            old_misk_t_ind = mm_nvar.find(self.dump_obj.sig_misc_t)
+                            mm_nvar.seek(old_misk_t_ind - 11)
+                            old_misk_t = mm.read(int(self.dump_obj.ful_size_misk_t, 16))
+
+                            if len(misk_t_dump) == len(old_misk_t):
+                                print(len(misk_t_dump), len(old_misk_t))
+
+                                # dump_nvar = f_nvar.read()
+                                mm_nvar.seek(0)
+                                nvar_mod_new = mm_nvar.read()
+                                # print(len(dump_nvar), len(m_nv))
+
+                                new_dump_nvar = nvar_mod_new.replace(old_misk_t, misk_t_dump)
+                                # print(len(f_nvar.read()))
+
+                            if mm_nvar.size() == len(nvar_mod_old):
+                                self.dump_obj.dump_full = f.read()
+                                print(len(self.dump_obj.dump_full))
+                                with open("data/test.bin", "w+b") as f_test:
+                                    # new_dump = self.dump_obj.dump_full.replace(nvar_mod_old, mm_nvar)
+                                    # new_misk_t_ind = new_dump.find(self.dump_obj.sig_misc_t)
+                                    # new_dump.seek(new_misk_t_ind - 11)
+                                    f_test.write(self.dump_obj.dump_full.replace(nvar_mod_old, new_dump_nvar))
 
     def open_file_oem(self):
         """ open the file to search for oem key
