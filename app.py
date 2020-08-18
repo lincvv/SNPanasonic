@@ -114,42 +114,59 @@ class Main(tk.Frame):
                 with mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as mm:
                     nvar_ind = mm.find(self.dump_obj.sig_nvar_full)
                     misk_t_ind = mm.find(self.dump_obj.sig_misc_t)
+                    misk_b_ind = mm.find(self.dump_obj.sig_misc_b)
+                    amit_ind = mm.find(self.dump_obj.sig_amit)
+
                     t = mm.rfind(self.dump_obj.sig_nvar_full)
                     print(hex(nvar_ind), hex(t))
+                    mm.seek(amit_ind - 11)
+                    amit_dump = mm.read(self.dump_obj.ful_size_amit)
                     mm.seek(misk_t_ind - 11)
-                    misk_t_dump = mm.read(int(self.dump_obj.ful_size_misk_t, 16))
+                    misk_t_dump = mm.read(self.dump_obj.ful_size_misk_t)
                     print(misk_t_dump)
+                    mm.seek(misk_b_ind - 11)
+                    misk_b_dump = mm.read(self.dump_obj.ful_size_misk_b)
                     mm.seek(nvar_ind)
-                    nvar_mod_old = mm.read(int(self.dump_obj.ful_size_nvar, 16))
-                    print(len(nvar_mod_old))
+                    nvar_mod_dump = mm.read(self.dump_obj.ful_size_nvar)
+                    print(len(nvar_mod_dump))
 
                     with open("data/NVRAM_NVAR_store_full.ffs", "r+b") as f_nvar:
-                        with mmap.mmap(f_nvar.fileno(), 0, access=mmap.ACCESS_READ) as mm_nvar:
-                            print(mm_nvar.size() == len(nvar_mod_old))
+                        with mmap.mmap(f_nvar.fileno(), 0, access=mmap.ACCESS_READ) as mm_nvar_data:
+                            print(mm_nvar_data.size() == len(nvar_mod_dump))
                             print(mm.size())
-                            old_misk_t_ind = mm_nvar.find(self.dump_obj.sig_misc_t)
-                            mm_nvar.seek(old_misk_t_ind - 11)
-                            old_misk_t = mm.read(int(self.dump_obj.ful_size_misk_t, 16))
+                            if mm_nvar_data.size() == len(nvar_mod_dump):
+                                pass
 
-                            if len(misk_t_dump) == len(old_misk_t):
-                                print(len(misk_t_dump), len(old_misk_t))
+                            misk_t_ind_data = mm_nvar_data.find(self.dump_obj.sig_misc_t)
+                            misk_b_ind_data = mm_nvar_data.find(self.dump_obj.sig_misc_b)
+                            amit_ind_data = mm_nvar_data.find(self.dump_obj.sig_amit)
 
-                                # dump_nvar = f_nvar.read()
-                                mm_nvar.seek(0)
-                                nvar_mod_new = mm_nvar.read()
-                                # print(len(dump_nvar), len(m_nv))
+                            mm_nvar_data.seek(amit_ind_data - 11)
+                            amit_data = mm.read(self.dump_obj.ful_size_amit)
+                            mm_nvar_data.seek(misk_t_ind_data - 11)
+                            misk_t_data = mm.read(self.dump_obj.ful_size_misk_t)
+                            mm_nvar_data.seek(misk_b_ind_data - 11)
+                            misk_b_data = mm.read(self.dump_obj.ful_size_misk_b)
 
-                                new_dump_nvar = nvar_mod_new.replace(old_misk_t, misk_t_dump)
-                                # print(len(f_nvar.read()))
+                            assert len(amit_data) == len(amit_dump)
+                            if len(amit_data) == len(amit_dump):
+                                mm_nvar_data.seek(0)
+                                nvar_mod_new = mm_nvar_data.read()
+                                new_nvar_data = nvar_mod_new.replace(amit_data, amit_dump)
 
-                            if mm_nvar.size() == len(nvar_mod_old):
+                                assert len(misk_b_dump) == len(misk_b_data)
+                                if len(misk_b_dump) == len(misk_b_data):
+                                    new_nvar_data = new_nvar_data.replace(misk_b_data, misk_b_dump)
+
+                                assert len(misk_t_dump) == len(misk_t_data)
+                                if len(misk_t_dump) == len(misk_t_data):
+                                    new_nvar_data = new_nvar_data.replace(misk_t_data, misk_t_dump)
+
+                            if len(new_nvar_data) == len(nvar_mod_dump):
                                 self.dump_obj.dump_full = f.read()
                                 print(len(self.dump_obj.dump_full))
                                 with open("data/test.bin", "w+b") as f_test:
-                                    # new_dump = self.dump_obj.dump_full.replace(nvar_mod_old, mm_nvar)
-                                    # new_misk_t_ind = new_dump.find(self.dump_obj.sig_misc_t)
-                                    # new_dump.seek(new_misk_t_ind - 11)
-                                    f_test.write(self.dump_obj.dump_full.replace(nvar_mod_old, new_dump_nvar))
+                                    f_test.write(self.dump_obj.dump_full.replace(nvar_mod_dump, new_nvar_data))
 
     def open_file_oem(self):
         """ open the file to search for oem key
