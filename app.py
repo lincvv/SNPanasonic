@@ -21,8 +21,8 @@ class Main(tk.Frame):
         0x600020,
     )
 
-    def __init__(self, root):
-        super().__init__(root)
+    def __init__(self, _root):
+        super().__init__(_root)
         self.read_img = None
         self.save_img = None
         self.read_key_img = None
