@@ -9,12 +9,12 @@ class Dump:
         self.sn_full_bytes = bytearray()
         self.dump_full = None
         self.sig_amit = bytearray(b'\x41\x4D\x49\x54\x53\x45\x53\x65\x74\x75\x70')
-        self.sig_drv_cam = bytearray(b'\x49\x7C\x97\x79\xB5\x0B\x1C\x40\x9A\xDB\xA3\x70\x98\xA4\x5A\x80')
+        self.sig_drv_cam = bytearray(b'\x00\x51\x57\xD5\x16\xD8\x82\x43\x97\x26\xB1\xDC\x5F\x1D\xF3\x77')
         self.sig_misc_b = bytearray(b'\x4D\x69\x73\x63\x45\x78\x74\x42\x6C\x6F\x63\x6B\x42\x61\x63\x6B\x75\x70')
         self.sig_misc_t = bytearray(b'\x4D\x69\x73\x63\x54\x61\x62\x6C\x65\x42\x61\x63\x6B\x75\x70')
         self.sig_nvar_full = bytearray(b'\xA3\xB9\xF5\xCE\x6D\x47\x7F\x49\x9F\xDC\xE9\x81\x43\xE0\x42\x2C\x34\xAA'
                                        b'\x01\x00\xB8\xFF\x03\xF8')
-        self.ful_size_drv_cam = int('177E', 16)
+        self.ful_size_drv_cam = int('BB6', 16)
         self.ful_size_amit = int('98', 16)
         self.ful_size_nvar = int('3FFB8', 16)
         self.ful_size_misk_t = int('9B', 16)
@@ -22,6 +22,12 @@ class Dump:
 
     def __repr__(self):
         return self.path_dump
+
+    @staticmethod
+    def find_get_data_n_var(*, mm_instance, signature, size):
+        ind = mm_instance.find(signature)
+        mm_instance.seek(ind - 11)
+        return mm_instance.read(size)
 
     @staticmethod
     def serial_dec_to_byte(serial_l) -> bytes:

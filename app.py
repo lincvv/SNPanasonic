@@ -58,7 +58,7 @@ class Main(tk.Frame):
         btn_fix_misc.pack(side=tk.LEFT)
 
         self.unlock_cam_img = tk.PhotoImage(file='img/cam.gif')
-        btn_unlock_cam = tk.Button(toolbar, text="Fix FZM1-2", bg="#FFFFFF", bd=2, command=self.unlock_cam,
+        btn_unlock_cam = tk.Button(toolbar, text="Fix M1-2", bg="#FFFFFF", bd=2, command=self.unlock_cam,
                                    compound=tk.TOP, image=self.unlock_cam_img)
         btn_unlock_cam.pack(side=tk.LEFT)
 
@@ -112,72 +112,72 @@ class Main(tk.Frame):
         if file != -1:
             with open(file, "r+b") as f:
                 with mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as mm:
+                    # amit
+                    amit_dump = self.dump_obj.find_get_data_n_var(mm_instance=mm, signature=self.dump_obj.sig_amit,
+                                                                  size=self.dump_obj.ful_size_amit)
+
+                    # misc
+                    misk_t_dump = self.dump_obj.find_get_data_n_var(mm_instance=mm, signature=self.dump_obj.sig_misc_t,
+                                                                    size=self.dump_obj.ful_size_misk_t)
+
+                    misk_b_dump = self.dump_obj.find_get_data_n_var(mm_instance=mm, signature=self.dump_obj.sig_misc_b,
+                                                                    size=self.dump_obj.ful_size_misk_b)
+
+                    # nvar_full
                     nvar_ind = mm.find(self.dump_obj.sig_nvar_full)
-                    misk_t_ind = mm.find(self.dump_obj.sig_misc_t)
-                    misk_b_ind = mm.find(self.dump_obj.sig_misc_b)
-                    amit_ind = mm.find(self.dump_obj.sig_amit)
-                    cam_dump_ind = mm.find(self.dump_obj.sig_drv_cam)
-
-                    t = mm.rfind(self.dump_obj.sig_nvar_full)
-                    print(hex(nvar_ind), hex(t))
-
-                    mm.seek(amit_ind - 11)
-                    amit_dump = mm.read(self.dump_obj.ful_size_amit)
-                    mm.seek(misk_t_ind - 11)
-                    misk_t_dump = mm.read(self.dump_obj.ful_size_misk_t)
-                    print(misk_t_dump)
-                    mm.seek(misk_b_ind - 11)
-                    misk_b_dump = mm.read(self.dump_obj.ful_size_misk_b)
                     mm.seek(nvar_ind)
                     nvar_mod_dump = mm.read(self.dump_obj.ful_size_nvar)
-                    print(len(nvar_mod_dump))
 
                     # cam driver
-                    # cam_dump_ind = mm.find(self.dump_obj.sig_drv_cam)
-                    print(cam_dump_ind)
+                    cam_dump_ind = mm.find(self.dump_obj.sig_drv_cam)
                     mm.seek(cam_dump_ind)
                     cam_dump = mm.read(self.dump_obj.ful_size_drv_cam)
 
                     with open("data/DXE_driver_UsbCameraCtrlDxe.ffs", "r+b") as f_nvar:
                         with mmap.mmap(f_nvar.fileno(), 0, access=mmap.ACCESS_READ) as mm_cam_data:
                             cam_data = mm_cam_data.read()
-                            assert cam_data == cam_dump
+                            if len(cam_dump) != mm_cam_data.size():
+                                print(2)
 
                     with open("data/NVRAM_NVAR_store_full.ffs", "r+b") as f_nvar:
                         with mmap.mmap(f_nvar.fileno(), 0, access=mmap.ACCESS_READ) as mm_nvar_data:
-                            print(mm_nvar_data.size() == len(nvar_mod_dump))
-                            print(mm.size())
-                            if mm_nvar_data.size() == len(nvar_mod_dump):
-                                pass
+                            if mm_nvar_data.size() != len(nvar_mod_dump):
+                                print(1)
 
-                            misk_t_ind_data = mm_nvar_data.find(self.dump_obj.sig_misc_t)
-                            misk_b_ind_data = mm_nvar_data.find(self.dump_obj.sig_misc_b)
-                            amit_ind_data = mm_nvar_data.find(self.dump_obj.sig_amit)
-
-                            mm_nvar_data.seek(amit_ind_data - 11)
-                            amit_data = mm.read(self.dump_obj.ful_size_amit)
-                            mm_nvar_data.seek(misk_t_ind_data - 11)
-                            misk_t_data = mm.read(self.dump_obj.ful_size_misk_t)
-                            mm_nvar_data.seek(misk_b_ind_data - 11)
-                            misk_b_data = mm.read(self.dump_obj.ful_size_misk_b)
-
+                            # amit_data
+                            amit_data = self.dump_obj.find_get_data_n_var(mm_instance=mm_nvar_data,
+                                                                          signature=self.dump_obj.sig_amit,
+                                                                          size=self.dump_obj.ful_size_amit)
                             assert len(amit_data) == len(amit_dump)
-                            mm_nvar_data.seek(0)
-                            nvar_mod_new = mm_nvar_data.read()
-                            new_nvar_data = nvar_mod_new.replace(amit_data, amit_dump)
+
+                            # misc_data
+                            misk_t_data = self.dump_obj.find_get_data_n_var(mm_instance=mm_nvar_data,
+                                                                            signature=self.dump_obj.sig_misc_t,
+                                                                            size=self.dump_obj.ful_size_misk_t)
+
+                            misk_b_data = self.dump_obj.find_get_data_n_var(mm_instance=mm_nvar_data,
+                                                                            signature=self.dump_obj.sig_misc_b,
+                                                                            size=self.dump_obj.ful_size_misk_b)
 
                             assert len(misk_b_dump) == len(misk_b_data)
-                            new_nvar_data = new_nvar_data.replace(misk_b_data, misk_b_dump)
-
                             assert len(misk_t_dump) == len(misk_t_data)
-                            new_nvar_data = new_nvar_data.replace(misk_t_data, misk_t_dump)
 
-                            if len(new_nvar_data) == len(nvar_mod_dump):
-                                self.dump_obj.dump_full = f.read()
+                            mm_nvar_data.seek(0)
+                            nvar_mod_data = mm_nvar_data.read()
+
+                            nvar_mod_data = nvar_mod_data.replace(amit_data, amit_dump)
+                            nvar_mod_data = nvar_mod_data.replace(misk_b_data, misk_b_dump)
+                            nvar_mod_data = nvar_mod_data.replace(misk_t_data, misk_t_dump)
+
+                            if len(nvar_mod_data) == mm_nvar_data.size():
+                                mm.seek(0)
+                                self.dump_obj.dump_full = mm.read()
                                 self.dump_obj.dump_full = self.dump_obj.dump_full.replace(cam_dump, cam_data)
-                                print(len(self.dump_obj.dump_full))
+
                                 with open("data/test.bin", "w+b") as f_test:
-                                    f_test.write(self.dump_obj.dump_full.replace(nvar_mod_dump, new_nvar_data))
+                                    f_test.write(self.dump_obj.dump_full.replace(nvar_mod_dump, nvar_mod_data))
+                            else:
+                                print("error")
 
     def open_file_oem(self):
         """ open the file to search for oem key
