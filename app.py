@@ -117,27 +117,30 @@ class Main(tk.Frame):
                                                                   size=self.dump_obj.ful_size_amit)
 
                     # misc
-                    misk_t_dump = self.dump_obj.find_get_data_n_var(mm_instance=mm, signature=self.dump_obj.sig_misc_t,
-                                                                    size=self.dump_obj.ful_size_misk_t)
-
-                    misk_b_dump = self.dump_obj.find_get_data_n_var(mm_instance=mm, signature=self.dump_obj.sig_misc_b,
-                                                                    size=self.dump_obj.ful_size_misk_b)
+                    # misk_t_dump = self.dump_obj.find_get_data_n_var(mm_instance=mm, signature=self.dump_obj.sig_misc_t,
+                    #                                                 size=self.dump_obj.ful_size_misk_t)
+                    #
+                    # misk_b_dump = self.dump_obj.find_get_data_n_var(mm_instance=mm, signature=self.dump_obj.sig_misc_b,
+                    #                                                 size=self.dump_obj.ful_size_misk_b)
 
                     # nvar_full
                     nvar_ind = mm.find(self.dump_obj.sig_nvar_full)
+                    r_nvar_ind = mm.find(self.dump_obj.sig_nvar_full, int('840048', 16))
+                    print(hex(nvar_ind), hex(r_nvar_ind))
                     mm.seek(nvar_ind)
                     nvar_mod_dump = mm.read(self.dump_obj.ful_size_nvar)
 
                     # cam driver
-                    cam_dump_ind = mm.find(self.dump_obj.sig_drv_cam)
-                    mm.seek(cam_dump_ind)
-                    cam_dump = mm.read(self.dump_obj.ful_size_drv_cam)
-
-                    with open("data/DXE_driver_UsbCameraCtrlDxe.ffs", "r+b") as f_nvar:
-                        with mmap.mmap(f_nvar.fileno(), 0, access=mmap.ACCESS_READ) as mm_cam_data:
-                            cam_data = mm_cam_data.read()
-                            if len(cam_dump) != mm_cam_data.size():
-                                print(2)
+                    # cam_dump_ind = mm.find(self.dump_obj.sig_drv_cam)
+                    # print(hex(cam_dump_ind))
+                    # mm.seek(cam_dump_ind)
+                    # cam_dump = mm.read(self.dump_obj.ful_size_drv_cam)
+                    #
+                    # with open("data/DXE_driver_UsbCameraCtrlDxe.ffs", "r+b") as f_nvar:
+                    #     with mmap.mmap(f_nvar.fileno(), 0, access=mmap.ACCESS_READ) as mm_cam_data:
+                    #         cam_data = mm_cam_data.read()
+                    #         if len(cam_dump) != mm_cam_data.size():
+                    #             print(2)
 
                     with open("data/NVRAM_NVAR_store_full.ffs", "r+b") as f_nvar:
                         with mmap.mmap(f_nvar.fileno(), 0, access=mmap.ACCESS_READ) as mm_nvar_data:
@@ -151,28 +154,28 @@ class Main(tk.Frame):
                             assert len(amit_data) == len(amit_dump)
 
                             # misc_data
-                            misk_t_data = self.dump_obj.find_get_data_n_var(mm_instance=mm_nvar_data,
-                                                                            signature=self.dump_obj.sig_misc_t,
-                                                                            size=self.dump_obj.ful_size_misk_t)
+                            # misk_t_data = self.dump_obj.find_get_data_n_var(mm_instance=mm_nvar_data,
+                            #                                                 signature=self.dump_obj.sig_misc_t,
+                            #                                                 size=self.dump_obj.ful_size_misk_t)
+                            #
+                            # misk_b_data = self.dump_obj.find_get_data_n_var(mm_instance=mm_nvar_data,
+                            #                                                 signature=self.dump_obj.sig_misc_b,
+                            #                                                 size=self.dump_obj.ful_size_misk_b)
 
-                            misk_b_data = self.dump_obj.find_get_data_n_var(mm_instance=mm_nvar_data,
-                                                                            signature=self.dump_obj.sig_misc_b,
-                                                                            size=self.dump_obj.ful_size_misk_b)
-
-                            assert len(misk_b_dump) == len(misk_b_data)
-                            assert len(misk_t_dump) == len(misk_t_data)
+                            # assert len(misk_b_dump) == len(misk_b_data)
+                            # assert len(misk_t_dump) == len(misk_t_data)
 
                             mm_nvar_data.seek(0)
                             nvar_mod_data = mm_nvar_data.read()
 
                             nvar_mod_data = nvar_mod_data.replace(amit_data, amit_dump)
-                            nvar_mod_data = nvar_mod_data.replace(misk_b_data, misk_b_dump)
-                            nvar_mod_data = nvar_mod_data.replace(misk_t_data, misk_t_dump)
+                            # nvar_mod_data = nvar_mod_data.replace(misk_b_data, misk_b_dump)
+                            # nvar_mod_data = nvar_mod_data.replace(misk_t_data, misk_t_dump)
 
                             if len(nvar_mod_data) == mm_nvar_data.size():
                                 mm.seek(0)
                                 self.dump_obj.dump_full = mm.read()
-                                self.dump_obj.dump_full = self.dump_obj.dump_full.replace(cam_dump, cam_data)
+                                # self.dump_obj.dump_full = self.dump_obj.dump_full.replace(cam_dump, cam_data)
 
                                 with open("data/test.bin", "w+b") as f_test:
                                     f_test.write(self.dump_obj.dump_full.replace(nvar_mod_dump, nvar_mod_data))

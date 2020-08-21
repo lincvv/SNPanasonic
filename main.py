@@ -9,11 +9,13 @@ class Dump:
         self.sn_full_bytes = bytearray()
         self.dump_full = None
         self.sig_amit = bytearray(b'\x41\x4D\x49\x54\x53\x45\x53\x65\x74\x75\x70')
+        self.vol_dxe = bytearray(b'\x93\xFD\x21\x9E\x72\x9C\x15\x4C\x8C\x4B\xE7\x7F\x1D\xB2\xD7\x92')
         self.sig_drv_cam = bytearray(b'\x00\x51\x57\xD5\x16\xD8\x82\x43\x97\x26\xB1\xDC\x5F\x1D\xF3\x77')
         self.sig_misc_b = bytearray(b'\x4D\x69\x73\x63\x45\x78\x74\x42\x6C\x6F\x63\x6B\x42\x61\x63\x6B\x75\x70')
         self.sig_misc_t = bytearray(b'\x4D\x69\x73\x63\x54\x61\x62\x6C\x65\x42\x61\x63\x6B\x75\x70')
         self.sig_nvar_full = bytearray(b'\xA3\xB9\xF5\xCE\x6D\x47\x7F\x49\x9F\xDC\xE9\x81\x43\xE0\x42\x2C')
         self.ful_size_drv_cam = int('BB6', 16)
+        self.ful_size_vol_dxe = int('3983B4', 16)
         self.ful_size_amit = int('98', 16)
         self.ful_size_nvar = int('3FFB8', 16)
         self.ful_size_misk_t = int('9B', 16)
