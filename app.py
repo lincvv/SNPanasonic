@@ -28,7 +28,7 @@ class Main(tk.Frame):
         self.read_key_img = None
         self.serial_number = None
         self.unlock_cam_img = None
-        self.fix_misc = None
+        self.fix_misc_img = None
         self.lab_file = None
         self.label_save = None
         self.label_value = None
@@ -52,9 +52,9 @@ class Main(tk.Frame):
                              compound=tk.TOP, image=self.save_img)
         btn_save.pack(side=tk.LEFT)
 
-        self.fix_misc = tk.PhotoImage(file='img/fix_misc.gif')
-        btn_fix_misc = tk.Button(toolbar, text="Fix MISC", bg="#FFFFFF", bd=2, command=self.open_file_oem,
-                                 compound=tk.TOP, image=self.fix_misc)
+        self.fix_misc_img = tk.PhotoImage(file='img/fix_misc.gif')
+        btn_fix_misc = tk.Button(toolbar, text="Fix MISC", bg="#FFFFFF", bd=2, command=self.fix_misc,
+                                 compound=tk.TOP, image=self.fix_misc_img)
         btn_fix_misc.pack(side=tk.LEFT)
 
         self.unlock_cam_img = tk.PhotoImage(file='img/cam.gif')
@@ -100,6 +100,19 @@ class Main(tk.Frame):
         msg_info = "OEM Product Key not found"
         mb.showinfo("info", msg_info)
         self.set_text(text_field="Key not found", font_txt_field="Verdana 10", text_lbl="OEM Key:")
+
+    def fix_misc(self):
+        old_dump = self.open_file()
+        misk_t_old, misk_b_old = Dump(name_dump=old_dump).get_misc_data()
+
+        new_dump = self.open_file()
+        self.dump_obj = Dump(name_dump=new_dump)
+        misk_t_new, misk_b_new = self.dump_obj.get_misc_data(save_full=True)
+
+        if len(misk_b_new) == len(misk_b_old) and len(misk_t_new) == len(misk_t_old):
+            with open("data/test.bin", "w+b") as f_test:
+                self.dump_obj.dump_full = self.dump_obj.dump_full.replace(misk_t_old, misk_t_new)
+                f_test.write(self.dump_obj.dump_full.replace(misk_b_old, misk_b_new))
 
     def unlock_cam(self):
         """

@@ -7,7 +7,6 @@ class Dump:
     def __init__(self, name_dump):
         self.path_dump = name_dump
         self.sn_full_bytes = bytearray()
-        self.dump_full = None
         self.sig_amit = bytearray(b'\x41\x4D\x49\x54\x53\x45\x53\x65\x74\x75\x70')
         self.vol_dxe = bytearray(b'\x93\xFD\x21\x9E\x72\x9C\x15\x4C\x8C\x4B\xE7\x7F\x1D\xB2\xD7\x92')
         self.sig_drv_cam = bytearray(b'\x00\x51\x57\xD5\x16\xD8\x82\x43\x97\x26\xB1\xDC\x5F\x1D\xF3\x77')
@@ -20,6 +19,9 @@ class Dump:
         self.ful_size_nvar = int('3FFB8', 16)
         self.ful_size_misk_t = int('9B', 16)
         self.ful_size_misk_b = int('44F', 16)
+        self.dump_full = None
+        self.misk_t_data = None
+        self.misk_b_data = None
 
     def __repr__(self):
         return self.path_dump
@@ -29,6 +31,21 @@ class Dump:
         ind = mm_instance.find(signature)
         mm_instance.seek(ind - 11)
         return mm_instance.read(size)
+
+    def get_misc_data(self, save_full=False):
+        if self.path_dump != -1:
+            with open(self.path_dump, "r+b") as f:
+                with mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as mm:
+
+                    # misc
+                    self.misk_t_data = self.find_get_data_n_var(mm_instance=mm, signature=self.sig_misc_t,
+                                                                size=self.ful_size_misk_t)
+
+                    self.misk_b_data = self.find_get_data_n_var(mm_instance=mm, signature=self.sig_misc_b,
+                                                                size=self.ful_size_misk_b)
+                if save_full:
+                    self.dump_full = f.read()
+            return self.misk_t_data, self.misk_b_data
 
     @staticmethod
     def serial_dec_to_byte(serial_l) -> bytes:
