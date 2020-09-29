@@ -30,6 +30,7 @@ class Main(tk.Frame):
         self.unlock_cam_img = None
         self.fix_misc_img = None
         self.lab_file = None
+        self.label_warning = None
         self.label_save = None
         self.label_value = None
         self.text_filed = None
@@ -101,12 +102,15 @@ class Main(tk.Frame):
         file_name = fd.asksaveasfilename(initialfile=F"{file_name_current}-{sufix}",
                                          filetypes=file_types,
                                          defaultextension=".bin")
-
+        print(file_name)
+        #TODO if not file_name raise
         return file_name if file_name else -1
 
     def clean_label(self):
         if self.label_save:
             self.label_save.destroy()
+        if self.label_warning:
+            self.label_warning.destroy()
         if self.label_value:
             self.label_value.destroy()
         if self.text_filed:
@@ -120,17 +124,25 @@ class Main(tk.Frame):
         self.set_text(text_field="Key not found", font_txt_field="Verdana 10", text_lbl="OEM Key:")
 
     def fix_misc(self):
+        self.clean_label()
+
         old_dump = self.open_file()
         misk_t_old, misk_b_old = Dump(name_dump=old_dump).get_misc_data()
 
         new_dump = self.open_file()
         self.dump_obj = Dump(name_dump=new_dump)
-        misk_t_new, misk_b_new = self.dump_obj.get_misc_data(save_full=True)
+        misc_t_new, misc_b_new = self.dump_obj.get_misc_data(save_full=True)
 
-        if len(misk_b_new) == len(misk_b_old) and len(misk_t_new) == len(misk_t_old):
-            with open("data/test.bin", "w+b") as f_test:
-                self.dump_obj.dump_full = self.dump_obj.dump_full.replace(misk_t_old, misk_t_new)
-                f_test.write(self.dump_obj.dump_full.replace(misk_b_old, misk_b_new))
+        if len(misc_b_new) == len(misk_b_old) and len(misc_t_new) == len(misk_t_old):
+            file_name = self.open_save_file(sufix="MISC")
+
+            with open(file_name, "w+b") as file:
+                self.dump_obj.dump_full = self.dump_obj.dump_full.replace(misk_t_old, misc_t_new)
+                name_file_save = os.path.basename(file_name).rsplit(".", 1)[0]
+                self.label_save = tk.Label(root, justify=tk.LEFT, text=F"***SAVE FILE***\n{name_file_save}\n ***OK***",
+                                           fg="grey", font="Verdana 10")
+                self.label_save.place(x=5, y=120)
+                file.write(self.dump_obj.dump_full.replace(misk_b_old, misc_b_new))
 
     def unlock_cam(self):
         """
@@ -193,9 +205,6 @@ class Main(tk.Frame):
                             #                                                 signature=self.dump_obj.sig_misc_b,
                             #                                                 size=self.dump_obj.ful_size_misk_b)
 
-                            # assert len(misk_b_dump) == len(misk_b_data)
-                            # assert len(misk_t_dump) == len(misk_t_data)
-
                             mm_nvar_data.seek(0)
                             nvar_mod_data = mm_nvar_data.read()
 
@@ -210,18 +219,20 @@ class Main(tk.Frame):
 
                                 file_name = self.open_save_file(sufix="CAM")
 
+                                print(1)
                                 with open(file_name, "w+b") as file:
                                     file.write(self.dump_obj.dump_full.replace(nvar_mod_dump, nvar_mod_data))
 
                                     name_file_save = os.path.basename(file_name).rsplit(".", 1)[0]
-                                    self.label_save = tk.Label(root, text=F"Save file: \n{name_file_save}\n ***OK***",
-                                                                fg="grey", font="Verdana 10")
-                                    self.label_save.place(x=5, y=120)
-                                    #
-                                    self.label_warning = tk.Label(root, text="Don't forget to change\n"
-                                                                             "DXE_driver_UsbCameraCtrlDxe!",
+                                    self.label_save = tk.Label(root, justify=tk.LEFT,
+                                                               text=F"***Save file***\n{name_file_save}\n ***OK***",
+                                                               fg="grey", font="Verdana 10")
+                                    self.label_save.place(x=2, y=120)
+                                    var = tk.StringVar()
+                                    self.label_warning = tk.Label(root, justify=tk.LEFT, textvariable=var,
                                                                   fg="orange", font="Verdana 10")
-                                    self.label_warning.place(x=5, y=260)
+                                    var.set("Don't forget to change DXE_driver_UsbCameraCtrlDxe!")
+                                    self.label_warning.place(x=5, y=180)
 
                             else:
                                 print("error")
