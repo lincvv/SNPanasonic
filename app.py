@@ -137,7 +137,7 @@ class Main(tk.Frame):
                     #                                                 size=self.dump_obj.ful_size_misk_b)
 
                     # nvar_full
-                    nvar_ind = mm.find(self.dump_obj.sig_nvar_full)
+                    nvar_ind = mm.rfind(self.dump_obj.sig_nvar_full, int('840048', 16))
                     r_nvar_ind = mm.find(self.dump_obj.sig_nvar_full, int('840048', 16))
                     print(hex(nvar_ind), hex(r_nvar_ind))
                     mm.seek(nvar_ind)
@@ -189,9 +189,25 @@ class Main(tk.Frame):
                                 mm.seek(0)
                                 self.dump_obj.dump_full = mm.read()
                                 # self.dump_obj.dump_full = self.dump_obj.dump_full.replace(cam_dump, cam_data)
+                                
+                                file_name_current = os.path.basename(self.dump_obj.path_dump).rsplit(".", 1)[0]
+                                file_types = [('bin', '.bin'), ('all files', '.*')]
+                                file_name = fd.asksaveasfilename(initialfile=F"{file_name_current}-CAM",
+                                                                 filetypes=file_types,
+                                                                 defaultextension=".bin")
+                                if not file_name:
+                                    return        
+                                with open(file_name, "w+b") as file:
+                                    file.write(self.dump_obj.dump_full.replace(nvar_mod_dump, nvar_mod_data))
+                                    self.label_save_ = tk.Label(root, text="Save file...OK",
+                                                               fg="grey", font="Verdana 10")
+                                    self.label_save_.place(x=2, y=160)
+                                    #
+                                    self.label_warning = tk.Label(root, text="Don't forget to change "
+                                                                             "DXE_driver_UsbCameraCtrlDxe!",
+                                                                  fg="grey", font="Verdana 10")
+                                    self.label_warning.place(x=5, y=260)
 
-                                with open("data/test.bin", "w+b") as f_test:
-                                    f_test.write(self.dump_obj.dump_full.replace(nvar_mod_dump, nvar_mod_data))
                             else:
                                 print("error")
 
