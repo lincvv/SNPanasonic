@@ -71,6 +71,7 @@ class Main(tk.Frame):
         """ check the serial number in the dump,
             if you need it then return """
 
+        self.clean_label()
         sn = None
         self.dump_obj = Dump(name_dump=file_name)
 
@@ -93,6 +94,23 @@ class Main(tk.Frame):
             self.set_label_file(F"File: {os.path.basename(file_path.name)}")
             return file_path.name
         return -1
+
+    def open_save_file(self, sufix):
+        file_name_current = os.path.basename(self.dump_obj.path_dump).rsplit(".", 1)[0]
+        file_types = [('bin', '.bin'), ('all files', '.*')]
+        file_name = fd.asksaveasfilename(initialfile=F"{file_name_current}-{sufix}",
+                                         filetypes=file_types,
+                                         defaultextension=".bin")
+
+        return file_name if file_name else -1
+
+    def clean_label(self):
+        if self.label_save:
+            self.label_save.destroy()
+        if self.label_value:
+            self.label_value.destroy()
+        if self.text_filed:
+            self.text_filed.destroy()
 
     def set_key_info(self):
         """ message that the key is not found """
@@ -119,7 +137,7 @@ class Main(tk.Frame):
 
         :return:
         """
-
+        self.clean_label()
         file = self.open_file()
         self.dump_obj = Dump(name_dump=file)
         if file != -1:
@@ -189,23 +207,20 @@ class Main(tk.Frame):
                                 mm.seek(0)
                                 self.dump_obj.dump_full = mm.read()
                                 # self.dump_obj.dump_full = self.dump_obj.dump_full.replace(cam_dump, cam_data)
-                                
-                                file_name_current = os.path.basename(self.dump_obj.path_dump).rsplit(".", 1)[0]
-                                file_types = [('bin', '.bin'), ('all files', '.*')]
-                                file_name = fd.asksaveasfilename(initialfile=F"{file_name_current}-CAM",
-                                                                 filetypes=file_types,
-                                                                 defaultextension=".bin")
-                                if not file_name:
-                                    return        
+
+                                file_name = self.open_save_file(sufix="CAM")
+
                                 with open(file_name, "w+b") as file:
                                     file.write(self.dump_obj.dump_full.replace(nvar_mod_dump, nvar_mod_data))
-                                    self.label_save_ = tk.Label(root, text="Save file...OK",
-                                                               fg="grey", font="Verdana 10")
-                                    self.label_save_.place(x=2, y=160)
+
+                                    name_file_save = os.path.basename(file_name).rsplit(".", 1)[0]
+                                    self.label_save = tk.Label(root, text=F"Save file: \n{name_file_save}\n ***OK***",
+                                                                fg="grey", font="Verdana 10")
+                                    self.label_save.place(x=5, y=120)
                                     #
-                                    self.label_warning = tk.Label(root, text="Don't forget to change "
+                                    self.label_warning = tk.Label(root, text="Don't forget to change\n"
                                                                              "DXE_driver_UsbCameraCtrlDxe!",
-                                                                  fg="grey", font="Verdana 10")
+                                                                  fg="orange", font="Verdana 10")
                                     self.label_warning.place(x=5, y=260)
 
                             else:
@@ -252,12 +267,13 @@ class Main(tk.Frame):
 
     def set_text(self, *, text_field, text_lbl="Current SN:", width_field=15, height_field=1, font_txt_field):
         # delete old text
-        if self.label_save:
-            self.label_save.destroy()
-        if self.label_value:
-            self.label_value.destroy()
-        if self.text_filed:
-            self.text_filed.destroy()
+        # if self.label_save:
+        #     self.label_save.destroy()
+        # if self.label_value:
+        #     self.label_value.destroy()
+        # if self.text_filed:
+        #     self.text_filed.destroy()
+        self.clean_label()
 
         # drawing the text
         self.label_value = tk.Label(root, text=text_lbl, fg="grey", font="Verdana 10")
@@ -280,10 +296,11 @@ class Main(tk.Frame):
             mb.showinfo("info", "Not open image for editing Serial Number")
             return
         current_sn = self.text_filed.get(0.1, "end")
-        file_name_current = os.path.basename(self.dump_obj.path_dump).rsplit(".", 1)[0]
-        file_types = [('bin', '.bin'), ('all files', '.*')]
-        file_name = fd.asksaveasfilename(initialfile=F"{file_name_current}-NEW_SN", filetypes=file_types,
-                                         defaultextension=".bin")
+        # file_name_current = os.path.basename(self.dump_obj.path_dump).rsplit(".", 1)[0]
+        # file_types = [('bin', '.bin'), ('all files', '.*')]
+        # file_name = fd.asksaveasfilename(initialfile=F"{file_name_current}-NEW_SN", filetypes=file_types,
+        #                                  defaultextension=".bin")
+        file_name = self.open_save_file(sufix="NEW_SN")
         if not file_name:
             return
         try:
