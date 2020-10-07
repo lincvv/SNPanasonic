@@ -75,32 +75,15 @@ class Dump:
 
     def _get_data_from_dump(self, *, offset: int, count: int) -> bytes:
         """
+        returns data from dump in specified range
 
         :param offset: read start offset
         :param count: number of bytes read
-        :return:
+        :return: data bytes from file
         """
 
         with open(self.path_dump, "rb") as file:
             self.dump_full = file.read()
-            # # print(self.misc_t)
-            # # mm = mmap.mmap(file.fileno(), 0)
-            # offset_t = self.dump_full.find(self.sig_misc_t, 0)
-            # offset_b = self.dump_full.find(self.sig_misc_b, 0)
-            # # TODO misc_b is different in dumps
-            # print(hex(offset_t))
-            # print(bool(offset_b))
-            # # print(mm.find(s_byte, 0))
-            # file.seek(offset_t)
-            # misk_t = file.read(int('8A', 16))
-            # # file.seek(offset_b)
-            # # misk_b = file.read(int('2EA', 16))
-            # with open(self.path_dump, 'wb') as _f:
-            #     _f.write(self.dump_full.replace(misk_t, misk_t))
-            # # print(hex(_f))
-            # print(misk_t)
-            # # print(misk_b)
-
             file.seek(offset)
             data = file.read(count)
         return data

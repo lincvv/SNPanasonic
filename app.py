@@ -1,3 +1,4 @@
+import logging
 import mmap
 import os
 import re
@@ -8,6 +9,10 @@ from main import Dump
 
 # 0x280020 - 19MK3
 # 0x600020 - 19MK4
+
+_logger = logging.getLogger("app")
+_logger.setLevel("DEBUG")
+_logger.addHandler(hdlr=logging.StreamHandler())
 
 
 class Main(tk.Frame):
@@ -21,8 +26,8 @@ class Main(tk.Frame):
         0x600020,
     )
 
-    def __init__(self, _root):
-        super().__init__(_root)
+    def __init__(self, _root, *args, **kwargs):
+        super().__init__(_root, *args, **kwargs)
         self.read_img = None
         self.save_img = None
         self.read_key_img = None
@@ -69,11 +74,16 @@ class Main(tk.Frame):
         btn_read_key.pack(side=tk.LEFT)
 
     def get_check_sn(self, file_name) -> str:
-        """ check the serial number in the dump,
-            if you need it then return """
+        """
+        check the serial number in the dump,
+            if you need it then return
 
-        self.clean_label()
+        :param file_name:
+        :return: serial number - str
+        """
+
         sn = None
+        self.clean_label()
         self.dump_obj = Dump(name_dump=file_name)
 
         for offset in self.OFFSETS:
@@ -102,8 +112,8 @@ class Main(tk.Frame):
         file_name = fd.asksaveasfilename(initialfile=F"{file_name_current}-{sufix}",
                                          filetypes=file_types,
                                          defaultextension=".bin")
-        print(file_name)
-        #TODO if not file_name raise
+        _logger.debug(f"current open file - {file_name}")
+        # TODO if not file_name raise
         return file_name if file_name else -1
 
     def clean_label(self):
@@ -125,6 +135,10 @@ class Main(tk.Frame):
 
     def fix_misc(self):
         self.clean_label()
+
+        mb.showinfo("info", "Readme:\n"
+                            "1. Open old BIOS dump\n"
+                            "2. Open new BIOS dump")
 
         old_dump = self.open_file()
         misk_t_old, misk_b_old = Dump(name_dump=old_dump).get_misc_data()
@@ -159,18 +173,13 @@ class Main(tk.Frame):
                     amit_dump = self.dump_obj.find_get_data_n_var(mm_instance=mm, signature=self.dump_obj.sig_amit,
                                                                   size=self.dump_obj.ful_size_amit)
 
-                    # misc
-                    # misk_t_dump = self.dump_obj.find_get_data_n_var(mm_instance=mm, signature=self.dump_obj.sig_misc_t,
-                    #                                                 size=self.dump_obj.ful_size_misk_t)
-                    #
-                    # misk_b_dump = self.dump_obj.find_get_data_n_var(mm_instance=mm, signature=self.dump_obj.sig_misc_b,
-                    #                                                 size=self.dump_obj.ful_size_misk_b)
-
-                    # nvar_full
-                    nvar_ind = mm.rfind(self.dump_obj.sig_nvar_full, int('840048', 16))
-                    r_nvar_ind = mm.find(self.dump_obj.sig_nvar_full, int('840048', 16))
-                    print(hex(nvar_ind), hex(r_nvar_ind))
-                    mm.seek(nvar_ind)
+                    # n_var_full
+                    n_var_ind = mm.rfind(self.dump_obj.sig_nvar_full, int('840048', 16))
+                    l_nvar_ind = mm.find(self.dump_obj.sig_nvar_full, int('840048', 16))
+                    _logger.debug(F"Find\n"
+                                  F" high index = {n_var_ind}\n"
+                                  F"low index = {l_nvar_ind}")
+                    mm.seek(n_var_ind)
                     nvar_mod_dump = mm.read(self.dump_obj.ful_size_nvar)
 
                     # cam driver
@@ -196,21 +205,10 @@ class Main(tk.Frame):
                                                                           size=self.dump_obj.ful_size_amit)
                             assert len(amit_data) == len(amit_dump)
 
-                            # misc_data
-                            # misk_t_data = self.dump_obj.find_get_data_n_var(mm_instance=mm_nvar_data,
-                            #                                                 signature=self.dump_obj.sig_misc_t,
-                            #                                                 size=self.dump_obj.ful_size_misk_t)
-                            #
-                            # misk_b_data = self.dump_obj.find_get_data_n_var(mm_instance=mm_nvar_data,
-                            #                                                 signature=self.dump_obj.sig_misc_b,
-                            #                                                 size=self.dump_obj.ful_size_misk_b)
-
                             mm_nvar_data.seek(0)
                             nvar_mod_data = mm_nvar_data.read()
 
                             nvar_mod_data = nvar_mod_data.replace(amit_data, amit_dump)
-                            # nvar_mod_data = nvar_mod_data.replace(misk_b_data, misk_b_dump)
-                            # nvar_mod_data = nvar_mod_data.replace(misk_t_data, misk_t_dump)
 
                             if len(nvar_mod_data) == mm_nvar_data.size():
                                 mm.seek(0)
@@ -219,7 +217,6 @@ class Main(tk.Frame):
 
                                 file_name = self.open_save_file(sufix="CAM")
 
-                                print(1)
                                 with open(file_name, "w+b") as file:
                                     file.write(self.dump_obj.dump_full.replace(nvar_mod_dump, nvar_mod_data))
 
@@ -235,7 +232,7 @@ class Main(tk.Frame):
                                     self.label_warning.place(x=5, y=180)
 
                             else:
-                                print("error")
+                                mb.showerror(title="Size Error", message="inconsistency of sizes NVRAM_NVAR")
 
     def open_file_oem(self):
         """ open the file to search for oem key
@@ -277,13 +274,15 @@ class Main(tk.Frame):
             )
 
     def set_text(self, *, text_field, text_lbl="Current SN:", width_field=15, height_field=1, font_txt_field):
-        # delete old text
-        # if self.label_save:
-        #     self.label_save.destroy()
-        # if self.label_value:
-        #     self.label_value.destroy()
-        # if self.text_filed:
-        #     self.text_filed.destroy()
+        """
+
+        :param text_field:
+        :param text_lbl:
+        :param width_field:
+        :param height_field:
+        :param font_txt_field:
+        :return: None
+        """
         self.clean_label()
 
         # drawing the text
@@ -307,10 +306,6 @@ class Main(tk.Frame):
             mb.showinfo("info", "Not open image for editing Serial Number")
             return
         current_sn = self.text_filed.get(0.1, "end")
-        # file_name_current = os.path.basename(self.dump_obj.path_dump).rsplit(".", 1)[0]
-        # file_types = [('bin', '.bin'), ('all files', '.*')]
-        # file_name = fd.asksaveasfilename(initialfile=F"{file_name_current}-NEW_SN", filetypes=file_types,
-        #                                  defaultextension=".bin")
         file_name = self.open_save_file(sufix="NEW_SN")
         if not file_name:
             return
@@ -330,6 +325,7 @@ if __name__ == "__main__":
     root.title("PanasonicTool")
     root.geometry("350x450+400+200")
     root.resizable(False, False)
+    root.geometry("340x450")
     icon = tk.PhotoImage(file='img/p_blue.ico')
     root.tk.call('wm', 'iconphoto', root._w, icon)
     root.mainloop()
