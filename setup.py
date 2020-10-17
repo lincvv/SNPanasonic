@@ -1,21 +1,19 @@
 import os
 from cx_Freeze import setup, Executable
 
-__version__ = "1.3"
+__version__ = "1.4a"
 
-os.environ['TCL_LIBRARY'] = "C:\\Python36\\tcl\\tcl8.6"
-os.environ['TK_LIBRARY'] = "C:\\Python36\\tcl\\tk8.6"
+os.environ['TCL_LIBRARY'] = "C:\\Python38\\tcl\\tcl8.6"
+os.environ['TK_LIBRARY'] = "C:\\Python38\\tcl\\tk8.6"
 
-include_files = ['img', r"C:\Python36\DLLs\tcl86t.dll", r"C:\Python36\DLLs\tk86t.dll"]
-excludes = ['logging', 'unittest', 'email', 'html', 'http', 'urllib',
-            'xml', 'pydoc', 'doctest', 'argparse', 'datetime', 'zipfile',
-            'subprocess', 'pickle', 'threading', 'locale', 'calendar',
-            'tokenize', 'base64', 'gettext', 'bz2', 'getopt', 'stringprep',
-            'contextlib', 'quopri', 'copy', 'imp']
-packages = ["os", "binascii", "mmap"]
+include_files = ["img", "data", "uefitool", r"C:\Python38\DLLs\tcl86t.dll", r"C:\Python38\DLLs\tk86t.dll"]
+excludes = ['unittest', 'email', 'html', 'http', 'urllib', 'xml', 'pydoc', 'doctest', 'argparse', 'datetime',
+            'zipfile', 'pickle', 'locale', 'calendar', 'base64', 'gettext', 'bz2', 'getopt',
+            'stringprep', 'quopri', 'copy', 'imp']
+packages = ["os", "binascii", "mmap", 'subprocess', 'logging', 'webbrowser']
 
 setup(
-    name="SNPanasonic",
+    name="PanasonicTool",
     description='App Description',
     version=__version__,
     options={"build_exe": {
