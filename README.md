@@ -1,3 +1,3 @@
-# SNPanasonic
+# PanasonicTool
 
-**Application for changing the serial number in the image of BIOS/EFI Panasonic**
+**Tool for working with bios / uefi Panasonic**
