@@ -277,7 +277,7 @@ class Main(tk.Frame):
         misc_t_old = self.old_dump.find_get_for_fix_data(self.old_dump.list_sig_misc_t)
         # n_var_full_old = self.old_dump.find_get_for_fix_data(self.old_dump.list_sig_n_var_full, n_offset=32)
 
-        if not misc_t_old and not n_var_full_old:
+        if not misc_t_old:
             mb.showerror("error", "mutable data not found")
             return
 
@@ -293,7 +293,7 @@ class Main(tk.Frame):
         misc_t_new = self.new_dump.find_get_for_fix_data(self.new_dump.list_sig_misc_t, save_full=True)
         # n_var_full_new = self.new_dump.find_get_for_fix_data(self.new_dump.list_sig_n_var_full, n_offset=32)
 
-        if not misc_t_new and not n_var_full_new:
+        if not misc_t_new:
             mb.showerror("error", "mutable data not found")
             return None
 

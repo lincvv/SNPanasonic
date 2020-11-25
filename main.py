@@ -20,6 +20,7 @@ class Dump:
         self.list_sig_misc_t = [
             (bytearray(b'\x4E\x56\x41\x52\x8A\x00\xFF\xFF\xFF\x88\x4D\x45\x49\x5F\x43\x46'), '8A'),
             (bytearray(b'\x4E\x56\x41\x52\x8A\x00\xFF\xFF\xFF\x88\x4D\x45\x49\x5F\x46\x5A'), '8A'),
+            (bytearray(b'\x4E\x56\x41\x52\x9B\x00\xFF\xFF\xFF\x83\x02\x4D\x69\x73\x63\x54'), '9B'),
         ]
         self.list_sig_n_var_full = [
             (bytearray(b'\x00\x00\x04\x00\x00\x00\x00\x00\x5F\x46\x56\x48\xFF\xFE\x04\x00'), '40000')
@@ -82,15 +83,15 @@ class Dump:
                     self.dump_full = f.read()
                 # TODO sig padding обрабатывать в вазывающей функции
                 for sig_padding, size in self.list_sig_paddings:
-                    if (mm.find(sig_padding, int('800000', 16))) != -1:
+                    if (mm.find(sig_padding, int('580000', 16))) != -1:
                         self.name_model = sig_padding[4:10].decode("utf-8")
                         _logger.debug(self.name_model)
 
                 for sig, size in list_sig:
-                    if (ind := mm.find(sig, int('800000', 16))) != -1:
+                    if (ind := mm.find(sig, int('580000', 16))) != -1:
 
-                        _logger.debug(f"highest index {hex(mm.rfind(sig, int('800000', 16)))}")
-                        _logger.debug(f"lowest index {hex(mm.find(sig, int('800000', 16)))}")
+                        _logger.debug(f"highest index {hex(mm.rfind(sig, int('580000', 16)))}")
+                        _logger.debug(f"lowest index {hex(mm.find(sig, int('580000', 16)))}")
                         _logger.debug(f"current ind == {hex(ind - n_offset)} and size == {hex(int(size, 16))}")
 
                         mm.seek(ind + int(size, 16))
