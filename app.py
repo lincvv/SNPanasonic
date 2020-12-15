@@ -274,7 +274,7 @@ class Main(tk.Frame):
         self.old_dump = Dump(abspath=old_dump)
 
         # padding_old = self.old_dump.get_fix_data(self.old_dump.list_sig_paddings, padding=True)
-        misc_t_old = self.old_dump.find_get_for_fix_data(self.old_dump.list_sig_misc_t)
+        misc_t_old = self.old_dump.get_misc_data(self.old_dump.list_sig_misc_t)
         # n_var_full_old = self.old_dump.find_get_for_fix_data(self.old_dump.list_sig_n_var_full, n_offset=32)
 
         if not misc_t_old:
@@ -290,7 +290,7 @@ class Main(tk.Frame):
         self.new_dump = Dump(abspath=new_dump)
 
         # padding_new = self.new_dump.get_fix_data(self.new_dump.list_sig_paddings, padding=True, save_full=True)
-        misc_t_new = self.new_dump.find_get_for_fix_data(self.new_dump.list_sig_misc_t, save_full=True)
+        misc_t_new = self.new_dump.get_misc_data(self.new_dump.list_sig_misc_t, save_full=True)
         # n_var_full_new = self.new_dump.find_get_for_fix_data(self.new_dump.list_sig_n_var_full, n_offset=32)
 
         if not misc_t_new:

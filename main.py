@@ -39,6 +39,7 @@ class Dump:
         self.ful_size_nvar = int('3FFB8', 16)
         self.ful_size_misc_t = int('8A', 16)
         self.ful_size_misc_b = int('43B', 16)
+        self.offset_data = 108
         self.dump_full = None
         self.data_padding = None
         self.misc_b_data = None
@@ -68,7 +69,7 @@ class Dump:
         mm_instance.seek(ind - offset_n)
         return mm_instance.read(size)
 
-    def find_get_for_fix_data(self, list_sig, save_full=False, n_offset=0):
+    def get_misc_data(self, list_sig, save_full=False):
         """
         Finds and returns data to modify
         :param list_sig:
@@ -93,13 +94,18 @@ class Dump:
 
                         _logger.debug(f"highest index {hex(mm.rfind(sig, int('580000', 16)))}")
                         _logger.debug(f"lowest index {hex(mm.find(sig, int('580000', 16)))}")
-                        _logger.debug(f"current ind == {hex(ind - n_offset)} and size == {hex(int(size, 16))}")
+                        _logger.debug(f"current ind == {hex(ind)} and size == {hex(int(size, 16))}")
 
-                        mm.seek(ind + int(size, 16))
+                        ind_data_end = ind + int(size, 16)
+                        ind_data_start = ind_data_end - self.offset_data
+                        mm.seek(ind_data_end)
+                        # проверяю что после начинается следуюшщая nvar
                         if mm.read(1) == b"\x4E":
-                            mm.seek(ind - n_offset)
-                            data = mm.read(int(size, 16))
-                            return data
+                            mm.seek(ind_data_start)
+                            data = mm.read(self.offset_data)
+                            # проверяю начало данных
+                            if data[:1] == b"\x08":
+                                return data
                         else:
                             return
                 return
