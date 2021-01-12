@@ -440,7 +440,7 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = Main(root)
     app.pack()
-    root.title("PanasonicTool")
+    root.title("PanasonicTool 1.4a")
     root.geometry("350x450+400+200")
     root.resizable(False, False)
     root.geometry("360x450")
