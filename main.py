@@ -39,7 +39,7 @@ class Dump:
         self.ful_size_nvar = int('3FFB8', 16)
         self.ful_size_misc_t = int('8A', 16)
         self.ful_size_misc_b = int('43B', 16)
-        self.offset_data = 108
+        self.offset_data = 108  # incomplete misc data size
         self.dump_full = None
         self.data_padding = None
         self.misc_b_data = None
