@@ -1,3 +1,4 @@
+import datetime
 import logging
 import mmap
 import os
@@ -6,8 +7,10 @@ import subprocess
 import tkinter as tk
 import webbrowser
 from pathlib import PurePath
-from tkinter import filedialog as fd
+from tkinter import filedialog as fd, HORIZONTAL
 from tkinter import messagebox as mb
+from tkinter.ttk import Progressbar
+
 from main import Dump
 
 # 0x280020 - 19MK3
@@ -36,7 +39,7 @@ class Main(tk.Frame):
     def __init__(self, _root, *args, **kwargs):
         super().__init__(_root, *args, **kwargs)
         self.root = _root
-        self.msg_save_file = "[*] SAVE FILE\n[*] {0}\n[*] OK"
+        self.home_dir = os.getcwd()
         self.image = None
         self.read_img = None
         self.save_img = None
@@ -45,7 +48,6 @@ class Main(tk.Frame):
         self.unlock_cam_img = None
         self.fix_misc_img = None
         self.clear_me_img = None
-        self.lbl_open_file = None
         self.btn_save = None
         self.field_sn = None
         self.old_dump = None
@@ -78,7 +80,7 @@ class Main(tk.Frame):
                                  compound=tk.TOP, image=self.read_key_img)
         btn_read_key.pack(side=tk.LEFT, padx=2)
 
-        self.clear_me_img = tk.PhotoImage(file='img/save.gif')
+        self.clear_me_img = tk.PhotoImage(file='img/me.gif')
         btn_me = tk.Button(toolbar, text="ME", bg="#FFFFFF", bd=2, command=self.clear_me,
                            compound=tk.TOP, image=self.clear_me_img)
         btn_me.pack(side=tk.LEFT, padx=2)
@@ -88,10 +90,10 @@ class Main(tk.Frame):
             self.btn_save.destroy()
 
         self.btn_save = tk.Button(root, text="SAVE", bg=bg, bd=3, command=self.save_serial,
-                                  fg=fg, height=1, width=19)
+                                  fg=fg, height=1, width=18)
 
         self.btn_save.pack()
-        self.btn_save.place(x=100, y=185)
+        self.btn_save.place(x=102, y=185)
 
     def clear_window(self):
         """
@@ -114,8 +116,16 @@ class Main(tk.Frame):
             return file_path.name
         return -1
 
-    def verbose_me(self, *, txt_label, x=2, y):
-        label_me = tk.Label(root, text=txt_label, fg="grey", font="Verdana 10")
+    def verbose_log(self, *, txt_label, fg="grey", x=2, y):
+        """
+
+        :param txt_label:
+        :param fg:
+        :param x:
+        :param y:
+        :return: None
+        """
+        label_me = tk.Label(root, text=txt_label, fg=fg, font="Verdana 10")
         label_me.place(x=x, y=y)
         self.list_to_clear.append(label_me)
 
@@ -131,14 +141,45 @@ class Main(tk.Frame):
         me_file = self.open_file()
         dir_output = self.image.path
         if me_file != -1:
-            self.verbose_me(txt_label=f"[*] ME file: {me_file}", y=230)
+            self.verbose_log(txt_label=f"[*] ME file: {me_file}", y=230)
             wd = os.getcwd()
-            fit_dir = PurePath(wd)
-            if fit_dir.parts[-1] != "fit11":
+            current_dir = PurePath(wd)
+            if current_dir.parts[-1] != "fit11":
                 os.chdir("fit11")
-            subprocess.run(f"fit.exe -b -o {PurePath(dir_output).parent}/{PurePath(dir_output).stem}_CleanME.bin "
-                           f"-f {self.image} "
-                           f"-me {me_file}")
+            output_path = F"{PurePath(dir_output).parent}/{PurePath(dir_output).stem}_CleanME.bin"
+            # -w<path>               Overrides the $WorkingDir environment variable.
+            # -s<path>               Overrides the $SourceDir environment variable
+            fit_proc = subprocess.Popen(f"fit.exe -b -o {output_path} "
+                                        f"-f {self.image} "
+                                        f"-me {me_file}")
+            progress = Progressbar(root, orient=HORIZONTAL, length=100, mode='indeterminate')
+            progress.place(x=50, y=260)
+            self.list_to_clear.append(progress)
+
+            import time
+            while True:
+                progress['value'] += 20
+                root.update_idletasks()
+                time.sleep(0.5)
+                fit_status = fit_proc.poll()
+                if fit_status is not None:
+                    _logger.debug(F"FIT status ==> {fit_status}")
+                    if fit_status == 5002:
+                        self.verbose_log(txt_label=F"[*] ERROR: Invalid input file type.", y=260, fg="red")
+                        break
+                    elif fit_proc.poll() == 0:
+                        self.verbose_log(txt_label=F"[*] Full Flash image written to ==>", y=260, fg="green")
+                        self.verbose_log(txt_label=F"\t{output_path}", y=280)
+                        mv_source_dir = PurePath(self.image.path)
+                        mv_destination_dir = PurePath.joinpath(PurePath(output_path).parent,
+                                                               datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
+                        _logger.debug(F"build dir ==> {mv_destination_dir}")
+                        subprocess.run(F"mkdir {mv_destination_dir}")
+                        subprocess.run(F"mv {mv_source_dir.stem} {mv_destination_dir}")
+                        break
+                    else:
+                        self.verbose_log(txt_label=F"[*] ERROR: Build Failed!", y=260, fg="red")
+                        break
 
     def choice_dir(self, sufix):
         """
@@ -166,7 +207,7 @@ class Main(tk.Frame):
         file = self.open_file()
         if file != -1:
             font = "Verdana 10"
-            self.field_sn = tk.Text(root, width=20, height=1.4, font=font, bd=3)
+            self.field_sn = tk.Text(root, width=17, height=1.4, font=font, bd=3)
             label_sn = tk.Label(root, text="Current SN:", fg="grey", font=font)
             self.serial_number = self.get_serial_number(file)
             if self.serial_number is None:
@@ -212,9 +253,9 @@ class Main(tk.Frame):
         with open(self.image.path, "r+b") as f:
             with mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as mm:
                 key = self.pattern_key.findall(mm)
-                font = "Verdana 10"
+                font = "Verdana 9"
                 y_tf = 230
-                field_oem = tk.Text(root, width=20, height=1.4, font=font, bd=3)
+                field_oem = tk.Text(root, width=30, height=1.4, font=font, bd=2)
                 label_oem = tk.Label(root, text="OEM Key:", fg="grey", font=font)
                 if not key:
                     msg_info = "OEM Product Key not found"
@@ -267,7 +308,7 @@ class Main(tk.Frame):
         except ValueError:
             mb.showerror("error", "у-п-с.... \n incorrect serial number")
         else:
-            label_save = tk.Label(root, text=F"[*] Write serial number.....OK", fg="grey", font="Verdana 10")
+            label_save = tk.Label(root, text=F"[*] Write serial number.....OK", fg="green", font="Verdana 10")
             label_save.place(x=2, y=220)
             self.list_to_clear.append(label_save)
             self.create_save_btn(fg="black", bg="#32a852")
@@ -280,6 +321,10 @@ class Main(tk.Frame):
                         name_model = sig_padding[4:10].decode("utf-8")
                         _logger.debug(name_model)
                         return name_model
+
+    def print_log_write_file(self, file_name):
+        self.verbose_log(txt_label=F"[*] Modify image written to ==>", y=260, fg="green")
+        self.verbose_log(txt_label=F"\t{file_name}", y=280)
 
     def fix_misc(self):
         """
@@ -325,11 +370,8 @@ class Main(tk.Frame):
 
         with open(file_name, "w+b") as file:
             file.write(self.image.dump_full)
-            name_file_save = os.path.basename(file_name).rsplit(".", 1)[0]
-            label_save = tk.Label(root, justify=tk.LEFT, text=self.msg_save_file.format(name_file_save),
-                                  fg="grey", font="Verdana 10")
-            label_save.place(x=5, y=220)
-            self.list_to_clear.append(label_save)
+            # name_file_save = os.path.basename(file_name).rsplit(".", 1)[0]
+            self.print_log_write_file(file_name)
 
     def verbose_cam(self, file_name):
 
@@ -339,25 +381,19 @@ class Main(tk.Frame):
         def uefi_tool(event):
             subprocess.Popen(['uefitool//UEFITool.exe', '-new-tab'])
 
-        name_file_save = os.path.basename(file_name).rsplit(".", 1)[0]
-
-        label_save = tk.Label(root, justify=tk.LEFT,
-                              text=self.msg_save_file.format(name_file_save),
-                              fg="grey", font="Verdana 10")
-        label_save.place(x=2, y=230)
-        self.list_to_clear.append(label_save)
+        self.print_log_write_file(file_name)
 
         var = tk.StringVar()
         label_info = tk.Label(root, justify=tk.LEFT, textvariable=var,
                               fg="orange", font="Verdana 10")
         var.set("Don't forget to change DXE_driver_UsbCameraCtrlDxe!")
-        label_info.place(x=2, y=290)
+        label_info.place(x=2, y=310)
         self.list_to_clear.append(label_info)
 
         label_download = tk.Label(root, justify=tk.LEFT, text="Download UsbCameraCtrlDxe",
                                   fg="blue", cursor="hand2")
         label_download.pack()
-        label_download.place(x=5, y=310)
+        label_download.place(x=5, y=330)
         uri = "https://mega.nz/file/Hx1RUI5J#thRGIXVtGsVisbDJ0VphQ7jrCGhpMW2dyH_Ga0M_4UQ"
         label_download.bind("<Button-1>", lambda e: download(uri))
         self.list_to_clear.append(label_download)
@@ -365,7 +401,7 @@ class Main(tk.Frame):
         label_uefitool = tk.Label(root, justify=tk.LEFT, text="Open UEFITool",
                                   fg="green", cursor="hand2")
         label_uefitool.pack()
-        label_uefitool.place(x=5, y=330)
+        label_uefitool.place(x=5, y=350)
         label_uefitool.bind("<Button-1>", uefi_tool)
         self.list_to_clear.append(label_uefitool)
 
@@ -408,6 +444,7 @@ class Main(tk.Frame):
                 #             print(2)
 
                 # read nvar mod from data/NVRAM_NVAR_store_full.ffs
+                os.chdir(self.home_dir)
                 with open("data/NVRAM_NVAR_store_full.ffs", "r+b") as f_nvar:
                     with mmap.mmap(f_nvar.fileno(), 0, access=mmap.ACCESS_READ) as mm_n_var_data:
                         if mm_n_var_data.size() != len(nvar_mod_dump):
@@ -449,7 +486,7 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = Main(root)
     app.pack()
-    root.title("PanasonicTool 1.4a")
+    root.title("PanasonicTool 1.4b")
     root.geometry("350x450+400+200")
     root.resizable(False, False)
     root.geometry("380x450")
