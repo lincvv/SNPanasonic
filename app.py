@@ -5,6 +5,7 @@ import re
 import subprocess
 import tkinter as tk
 import webbrowser
+from pathlib import PurePath
 from tkinter import filedialog as fd
 from tkinter import messagebox as mb
 from main import Dump
@@ -20,6 +21,7 @@ stream_h.setLevel(logging.DEBUG)
 _logger.addHandler(hdlr=stream_h)
 
 
+# TODO REFACTORING
 class Main(tk.Frame):
     pattern_key = re.compile(rb'\w{5}-\w{5}-\w{5}-\w{5}-\w{5}', flags=re.ASCII)
     OFFSETS = (
@@ -41,7 +43,9 @@ class Main(tk.Frame):
         self.serial_number = None
         self.unlock_cam_img = None
         self.fix_misc_img = None
+        self.clear_me_img = None
         self.lab_file = None
+        self.btn_save = None
         self.text_field = None
         self.new_dump = None
         self.old_dump = None
@@ -55,29 +59,49 @@ class Main(tk.Frame):
         toolbar.pack(side=tk.TOP, fill=tk.X)
 
         self.read_img = tk.PhotoImage(file='img/open.gif')
-        btn_read = tk.Button(toolbar, text="Check SN", bg="#FFFFFF", bd=2, command=self.check_sn,
+        btn_read = tk.Button(toolbar, text="Open", bg="#FFFFFF", bd=2, command=self.check_sn,
                              compound=tk.TOP, image=self.read_img)
-        btn_read.pack(side=tk.LEFT)
+        btn_read.pack(side=tk.LEFT, padx=2)
 
-        self.save_img = tk.PhotoImage(file='img/save.gif')
-        btn_save = tk.Button(toolbar, text="Save SN", bg="#FFFFFF", bd=2, command=self.save_serial,
-                             compound=tk.TOP, image=self.save_img)
-        btn_save.pack(side=tk.LEFT)
+        # self.save_img = tk.PhotoImage(file='img/save.gif')
+        # btn_save = tk.Button(toolbar, text="Save SN", bg="#FFFFFF", bd=2, command=self.save_serial,
+        #                      compound=tk.TOP, image=self.save_img)
+        # btn_save.pack(side=tk.LEFT)
 
         self.fix_misc_img = tk.PhotoImage(file='img/fix_misc.gif')
         btn_fix_misc = tk.Button(toolbar, text="Fix MISC", bg="#FFFFFF", bd=2, command=self.fix_misc,
                                  compound=tk.TOP, image=self.fix_misc_img)
-        btn_fix_misc.pack(side=tk.LEFT)
+        btn_fix_misc.pack(side=tk.LEFT, padx=2)
 
         self.unlock_cam_img = tk.PhotoImage(file='img/cam.gif')
         btn_unlock_cam = tk.Button(toolbar, text="Fix M1-2", bg="#FFFFFF", bd=2, command=self.unlock_cam,
                                    compound=tk.TOP, image=self.unlock_cam_img)
-        btn_unlock_cam.pack(side=tk.LEFT)
+        btn_unlock_cam.pack(side=tk.LEFT, padx=2)
 
         self.read_key_img = tk.PhotoImage(file='img/key.gif')
         btn_read_key = tk.Button(toolbar, text="OEM Key", bg="#FFFFFF", bd=2, command=self.open_file_oem,
                                  compound=tk.TOP, image=self.read_key_img)
-        btn_read_key.pack(side=tk.LEFT)
+        btn_read_key.pack(side=tk.LEFT, padx=2)
+
+        self.clear_me_img = tk.PhotoImage(file='img/me.gif')
+        btn_me = tk.Button(toolbar, text="ME", bg="#FFFFFF", bd=2, command=self.clear_me,
+                           compound=tk.TOP, image=self.clear_me_img)
+        btn_me.pack(side=tk.LEFT, padx=2)
+
+    def create_save_btn(self, *, bg, fg):
+        if self.btn_save:
+            try:
+                self.label_list.remove(self.btn_save)
+            except ValueError:
+                pass
+            self.btn_save.destroy()
+
+        self.btn_save = tk.Button(root, text="SAVE", bg=bg, bd=3, command=self.save_serial,
+                                  fg=fg, height=1, width=19)
+
+        self.btn_save.pack()
+        self.btn_save.place(x=100, y=155)
+        self.label_list.append(self.btn_save)
 
     def clean_label(self):
         """
@@ -87,6 +111,7 @@ class Main(tk.Frame):
 
         for val in self.label_list:
             val.destroy()
+            val = None
 
         self.label_list.clear()
 
@@ -102,6 +127,27 @@ class Main(tk.Frame):
             self.set_label_file(F"File: {os.path.basename(file_path.name)}")
             return file_path.name
         return -1
+
+    def clear_me(self):
+        """
+
+        :return: None
+        """
+        self.clean_label()
+        if self.new_dump is None:
+            mb.showinfo("info", "Not open image for editing Serial Number")
+            return
+
+        me_file = self.open_file()
+        dir_output = self.new_dump.path_dump
+        if me_file != -1:
+            wd = os.getcwd()
+            fit_dir = PurePath(wd)
+            if fit_dir.parts[-1] != "fit11":
+                os.chdir("fit11")
+            subprocess.run(f"fit.exe -b -o "
+                           f"{PurePath(dir_output).parent}/{PurePath(dir_output).stem}_CleanME.bin "
+                           f"-f {self.new_dump} -me {me_file}")
 
     def save_file(self, sufix):
         """
@@ -211,7 +257,7 @@ class Main(tk.Frame):
         self.lab_file = tk.Label(root, text=text, fg="grey", font="Verdana 10")
         self.lab_file.place(x=2, y=100)
 
-    def set_text(self, *, text, text_lbl="Current SN:", width_field=15, height_field=1, font_txt_field):
+    def set_text(self, *, text, text_lbl="Current SN:", width_field=20, height_field=1.4, font_txt_field):
         """
         Displays text in a field
         :param text: text displayed in the field
@@ -228,11 +274,12 @@ class Main(tk.Frame):
         label_value.place(x=2, y=130)
         self.label_list.append(label_value)
 
-        self.text_field = tk.Text(root, width=width_field, height=height_field, font=font_txt_field)
+        self.text_field = tk.Text(root, width=width_field, height=height_field, font=font_txt_field, bd=3)
         self.text_field.pack()
         self.text_field.place(x=100, y=130)
         self.text_field.insert(0.1, text)
         self.label_list.append(self.text_field)
+        self.create_save_btn(fg="green", bg="#FFFFFF")
 
     def save_serial(self):
         """
@@ -253,9 +300,12 @@ class Main(tk.Frame):
             mb.showerror("error", "у-п-с.... \n incorrect serial number")
         else:
             label_save = tk.Label(root, text=F"[*] Write serial number.....OK", fg="grey", font="Verdana 10")
-            label_save.place(x=2, y=160)
+            label_save.place(x=2, y=190)
             self.label_list.append(label_save)
-    # TODO обьединить в один метод
+            # self.btn_save.destroy()
+            # self.label_list.remove(self.btn_save)
+            self.create_save_btn(fg="black", bg="#32a852")
+            self.label_list.append(self.btn_save)
 
     def fix_misc(self):
         """
@@ -408,7 +458,6 @@ class Main(tk.Frame):
                                                       fg="grey", font="Verdana 10")
                                 label_save.place(x=2, y=120)
                                 self.label_list.append(label_save)
-                                # TODO обьединить в один метод
 
                                 var = tk.StringVar()
                                 label_info = tk.Label(root, justify=tk.LEFT, textvariable=var,
@@ -443,7 +492,7 @@ if __name__ == "__main__":
     root.title("PanasonicTool 1.4a")
     root.geometry("350x450+400+200")
     root.resizable(False, False)
-    root.geometry("360x450")
+    root.geometry("380x450")
     icon = tk.PhotoImage(file='img/p_blue.ico')
     root.tk.call('wm', 'iconphoto', root._w, icon)
     root.mainloop()
