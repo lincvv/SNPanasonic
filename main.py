@@ -10,7 +10,7 @@ _logger.setLevel(logging.DEBUG)
 class Dump:
 
     def __init__(self, abspath):
-        self.path_dump = abspath
+        self.path = abspath
         self.list_sig_paddings = [
             (bytearray(b'\x4D\x45\x49\x5F\x46\x5A\x47\x31\x2D\x34\x00\x00\x00\x00\x00\00'), '40000'),
             (bytearray(b'\x4D\x45\x49\x5F\x43\x46\x31\x39\x2D\x36\x00\x00\x00\x00\x00\x00'), '30000'),
@@ -44,10 +44,10 @@ class Dump:
         self.data_padding = None
         self.misc_b_data = None
         self.misc_t_data = None
-        self.name_model = None
+        self.name_model: str
 
     def __repr__(self):
-        return self.path_dump
+        return self.path
 
     @staticmethod
     def is_check_data(data1: str, data2: str) -> bool:
@@ -69,27 +69,19 @@ class Dump:
         mm_instance.seek(ind - offset_n)
         return mm_instance.read(size)
 
-    def get_misc_data(self, list_sig, save_full=False):
+    def get_misc_data(self, save_full=False):
         """
         Finds and returns data to modify
-        :param list_sig:
         :param save_full:
-        :param padding:
-        :param n_offset:
         :return: str data or None if not found data
         """
-        with open(self.path_dump, "r+b") as f:
+        with open(self.path, "r+b") as f:
             with mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as mm:
 
                 if save_full:
                     self.dump_full = f.read()
-                # TODO sig padding обрабатывать в вазывающей функции
-                for sig_padding, size in self.list_sig_paddings:
-                    if (mm.find(sig_padding, int('580000', 16))) != -1:
-                        self.name_model = sig_padding[4:10].decode("utf-8")
-                        _logger.debug(self.name_model)
 
-                for sig, size in list_sig:
+                for sig, size in self.list_sig_misc_t:
                     if (ind := mm.find(sig, int('580000', 16))) != -1:
 
                         _logger.debug(f"highest index {hex(mm.rfind(sig, int('580000', 16)))}")
@@ -119,7 +111,7 @@ class Dump:
         :return: data bytes from file
         """
 
-        with open(self.path_dump, "rb") as file:
+        with open(self.path, "rb") as file:
             self.dump_full = file.read()
             file.seek(offset)
             data = file.read(size)

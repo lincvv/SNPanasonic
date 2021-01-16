@@ -37,6 +37,7 @@ class Main(tk.Frame):
         super().__init__(_root, *args, **kwargs)
         self.root = _root
         self.msg_save_file = "[*] SAVE FILE\n[*] {0}\n[*] OK"
+        self.image = None
         self.read_img = None
         self.save_img = None
         self.read_key_img = None
@@ -44,13 +45,12 @@ class Main(tk.Frame):
         self.unlock_cam_img = None
         self.fix_misc_img = None
         self.clear_me_img = None
-        self.lab_file = None
+        self.lbl_open_file = None
         self.btn_save = None
-        self.text_field = None
-        self.new_dump = None
+        self.field_sn = None
         self.old_dump = None
         self.current_offset = None
-        self.label_list = list()
+        self.list_to_clear = list()
         self.init_app()
 
     def init_app(self):
@@ -62,11 +62,6 @@ class Main(tk.Frame):
         btn_read = tk.Button(toolbar, text="Open", bg="#FFFFFF", bd=2, command=self.check_sn,
                              compound=tk.TOP, image=self.read_img)
         btn_read.pack(side=tk.LEFT, padx=2)
-
-        # self.save_img = tk.PhotoImage(file='img/save.gif')
-        # btn_save = tk.Button(toolbar, text="Save SN", bg="#FFFFFF", bd=2, command=self.save_serial,
-        #                      compound=tk.TOP, image=self.save_img)
-        # btn_save.pack(side=tk.LEFT)
 
         self.fix_misc_img = tk.PhotoImage(file='img/fix_misc.gif')
         btn_fix_misc = tk.Button(toolbar, text="Fix MISC", bg="#FFFFFF", bd=2, command=self.fix_misc,
@@ -83,37 +78,30 @@ class Main(tk.Frame):
                                  compound=tk.TOP, image=self.read_key_img)
         btn_read_key.pack(side=tk.LEFT, padx=2)
 
-        self.clear_me_img = tk.PhotoImage(file='img/me.gif')
+        self.clear_me_img = tk.PhotoImage(file='img/save.gif')
         btn_me = tk.Button(toolbar, text="ME", bg="#FFFFFF", bd=2, command=self.clear_me,
                            compound=tk.TOP, image=self.clear_me_img)
         btn_me.pack(side=tk.LEFT, padx=2)
 
     def create_save_btn(self, *, bg, fg):
         if self.btn_save:
-            try:
-                self.label_list.remove(self.btn_save)
-            except ValueError:
-                pass
             self.btn_save.destroy()
 
         self.btn_save = tk.Button(root, text="SAVE", bg=bg, bd=3, command=self.save_serial,
                                   fg=fg, height=1, width=19)
 
         self.btn_save.pack()
-        self.btn_save.place(x=100, y=155)
-        self.label_list.append(self.btn_save)
+        self.btn_save.place(x=100, y=185)
 
-    def clean_label(self):
+    def clear_window(self):
         """
         Clear all labels
         :return: None
         """
-
-        for val in self.label_list:
+        for val in self.list_to_clear:
             val.destroy()
-            val = None
 
-        self.label_list.clear()
+        self.list_to_clear.clear()
 
     def open_file(self):
         """
@@ -121,46 +109,47 @@ class Main(tk.Frame):
         if there is no file -> -1
         :return: path name or -1
         """
-
         file_path = fd.askopenfile()
         if file_path:
-            self.set_label_file(F"File: {os.path.basename(file_path.name)}")
             return file_path.name
         return -1
 
+    def verbose_me(self, *, txt_label, x=2, y):
+        label_me = tk.Label(root, text=txt_label, fg="grey", font="Verdana 10")
+        label_me.place(x=x, y=y)
+        self.list_to_clear.append(label_me)
+
     def clear_me(self):
         """
-
         :return: None
         """
-        self.clean_label()
-        if self.new_dump is None:
+        self.clear_window()
+        if self.image is None:
             mb.showinfo("info", "Not open image for editing Serial Number")
             return
 
         me_file = self.open_file()
-        dir_output = self.new_dump.path_dump
+        dir_output = self.image.path
         if me_file != -1:
+            self.verbose_me(txt_label=f"[*] ME file: {me_file}", y=230)
             wd = os.getcwd()
             fit_dir = PurePath(wd)
             if fit_dir.parts[-1] != "fit11":
                 os.chdir("fit11")
-            subprocess.run(f"fit.exe -b -o "
-                           f"{PurePath(dir_output).parent}/{PurePath(dir_output).stem}_CleanME.bin "
-                           f"-f {self.new_dump} -me {me_file}")
+            subprocess.run(f"fit.exe -b -o {PurePath(dir_output).parent}/{PurePath(dir_output).stem}_CleanME.bin "
+                           f"-f {self.image} "
+                           f"-me {me_file}")
 
-    def save_file(self, sufix):
+    def choice_dir(self, sufix):
         """
-
         :param sufix: sufix for name file
         :return: file name or None
         """
-        file_name_current = os.path.basename(self.new_dump.path_dump).rsplit(".", 1)[0]
+        file_name_current = os.path.basename(self.image.path).rsplit(".", 1)[0]
         file_types = [('bin', '.bin'), ('all files', '.*')]
-        file_name = fd.asksaveasfilename(initialfile=F"{file_name_current}_{sufix}",
-                                         filetypes=file_types,
+        file_name = fd.asksaveasfilename(initialfile=F"{file_name_current}_{sufix}", filetypes=file_types,
                                          defaultextension=".bin")
-        _logger.debug(f"current open file - {file_name}")
+        _logger.debug(f"current choice file - {file_name}")
 
         if file_name:
             return file_name
@@ -176,44 +165,19 @@ class Main(tk.Frame):
 
         file = self.open_file()
         if file != -1:
-            self.serial_number = self.get_check_sn(file)
+            font = "Verdana 10"
+            self.field_sn = tk.Text(root, width=20, height=1.4, font=font, bd=3)
+            label_sn = tk.Label(root, text="Current SN:", fg="grey", font=font)
+            self.serial_number = self.get_serial_number(file)
             if self.serial_number is None:
                 mb.showinfo("info", "У-п-с.... Голяк :=)")
-                self.set_text(text="Голяк", font_txt_field="Verdana 10")
+                self.create_text_field(obj_label=label_sn, obj_field=self.field_sn, txt_field="Голяк")
                 return None
 
-            self.set_text(
-                text=self.serial_number,
-                font_txt_field="Arial 10",
-            )
+            self.create_text_field(obj_label=label_sn, obj_field=self.field_sn, txt_field=self.serial_number)
+            self.create_save_btn(fg="green", bg="#FFFFFF")
 
-    def open_file_oem(self):
-        """
-        open the file to search for oem key
-            and display it
-        :return: None
-        """
-
-        file = self.open_file()
-        if file != -1:
-            with open(file, "r+b") as f:
-                with mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as mm:
-                    key = self.pattern_key.findall(mm)
-
-                    if not key:
-                        self.set_key_info()
-
-                        return None
-
-                    self.set_text(
-                        text=key,
-                        text_lbl="OEM Key:",
-                        width_field=32,
-                        height_field=1,
-                        font_txt_field="Verdana 8",
-                    )
-
-    def get_check_sn(self, file_name) -> str:
+    def get_serial_number(self, file_name) -> str:
         """
         check the serial number in the dump,
             if you need it then return
@@ -221,14 +185,17 @@ class Main(tk.Frame):
         :param file_name: file name
         :return: serial number - str
         """
-
         sn = None
-        self.clean_label()
-        self.new_dump = Dump(abspath=file_name)
+        self.clear_window()
+        self.image = Dump(abspath=file_name)
+        lbl_open_file = tk.Label(root, text=F"File: {self.image.path}", fg="grey", font="Verdana 10")
+        lbl_model = tk.Label(root, text=F"Model: {self.get_platform()}", fg="grey", font="Verdana 10")
+        lbl_open_file.place(x=2, y=100)
+        lbl_model.place(x=2, y=130)
 
         for offset in self.OFFSETS:
             try:
-                sn = self.new_dump.read_sn(offset=offset)
+                sn = self.image.read_sn(offset=offset)
             except (ValueError, Exception):
                 continue
             else:
@@ -236,83 +203,90 @@ class Main(tk.Frame):
                 break
         return sn
 
-    def set_key_info(self):
+    def open_file_oem(self):
         """
-        message that the key is not found
+        open the file to search for oem key
+            and display it
         :return: None
         """
+        with open(self.image.path, "r+b") as f:
+            with mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as mm:
+                key = self.pattern_key.findall(mm)
+                font = "Verdana 10"
+                y_tf = 230
+                field_oem = tk.Text(root, width=20, height=1.4, font=font, bd=3)
+                label_oem = tk.Label(root, text="OEM Key:", fg="grey", font=font)
+                if not key:
+                    msg_info = "OEM Product Key not found"
+                    mb.showinfo("info", msg_info)
+                    self.create_text_field(obj_label=label_oem, obj_field=field_oem,
+                                           txt_field="Key not found", y_tf=y_tf)
 
-        msg_info = "OEM Product Key not found"
-        mb.showinfo("info", msg_info)
-        self.set_text(text="Key not found", font_txt_field="Verdana 10", text_lbl="OEM Key:")
+                    return
 
-    def set_label_file(self, text):
-        """
-        display open file name
-        :param text: text for display
-        :return: None
-        """
-        if self.lab_file:
-            self.lab_file.destroy()
-        self.lab_file = tk.Label(root, text=text, fg="grey", font="Verdana 10")
-        self.lab_file.place(x=2, y=100)
+                self.create_text_field(obj_label=label_oem, obj_field=field_oem, txt_field=key[0], y_tf=y_tf)
+                self.list_to_clear.extend([field_oem, label_oem])
 
-    def set_text(self, *, text, text_lbl="Current SN:", width_field=20, height_field=1.4, font_txt_field):
+    def create_text_field(self, *, obj_field, txt_field, obj_label=None, x_tf=2, y_tf=160):
         """
         Displays text in a field
-        :param text: text displayed in the field
-        :param text_lbl: text label
-        :param width_field: width field
-        :param height_field: height field
-        :param font_txt_field: font for text
+        :param txt_field: text displayed in the field
+        :param obj_field: text label
+        :param obj_label: width field
+        :param x_tf:
+        :param y_tf:
         :return: None
         """
-        self.clean_label()
+        self.clear_window()
 
-        # drawing the text
-        label_value = tk.Label(root, text=text_lbl, fg="grey", font="Verdana 10")
-        label_value.place(x=2, y=130)
-        self.label_list.append(label_value)
+        if obj_label:
+            # drawing the text
+            obj_label.place(x=x_tf, y=y_tf)
+            x_tf = 100
 
-        self.text_field = tk.Text(root, width=width_field, height=height_field, font=font_txt_field, bd=3)
-        self.text_field.pack()
-        self.text_field.place(x=100, y=130)
-        self.text_field.insert(0.1, text)
-        self.label_list.append(self.text_field)
-        self.create_save_btn(fg="green", bg="#FFFFFF")
+        obj_field.pack()
+        obj_field.place(x=x_tf, y=y_tf)
+        obj_field.insert(0.1, txt_field)
 
     def save_serial(self):
         """
         Saves serial number to file
         :return: None
         """
-        if self.new_dump is None:
+        self.clear_window()
+        if self.image is None:
             mb.showinfo("info", "Not open image for editing Serial Number")
             return
-        current_sn = self.text_field.get(0.1, "end")
+        current_sn = self.field_sn.get(0.1, "end")
 
-        file_name = self.save_file(sufix="NEW_SN_")
+        file_name = self.choice_dir(sufix="NEW_SN_")
         if not file_name:
             return
         try:
-            self.new_dump.write_sn(file_name=file_name, serial=current_sn)
+            self.image.write_sn(file_name=file_name, serial=current_sn)
         except ValueError:
             mb.showerror("error", "у-п-с.... \n incorrect serial number")
         else:
             label_save = tk.Label(root, text=F"[*] Write serial number.....OK", fg="grey", font="Verdana 10")
-            label_save.place(x=2, y=190)
-            self.label_list.append(label_save)
-            # self.btn_save.destroy()
-            # self.label_list.remove(self.btn_save)
+            label_save.place(x=2, y=220)
+            self.list_to_clear.append(label_save)
             self.create_save_btn(fg="black", bg="#32a852")
-            self.label_list.append(self.btn_save)
+
+    def get_platform(self):
+        with open(self.image.path, "r+b") as f:
+            with mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as mm:
+                for sig_padding, size in self.image.list_sig_paddings:
+                    if (mm.find(sig_padding, int('580000', 16))) != -1:
+                        name_model = sig_padding[4:10].decode("utf-8")
+                        _logger.debug(name_model)
+                        return name_model
 
     def fix_misc(self):
         """
         fixes data for MISC driver
         :return: None
         """
-        self.clean_label()
+        self.clear_window()
         misc_t_old = n_var_full_old = misc_t_new = n_var_full_new = str()
 
         mb.showinfo("info", "Open old BIOS dump\n")
@@ -321,84 +295,105 @@ class Main(tk.Frame):
         if old_dump == -1:
             mb.showerror("error", "can't open file")
             return
+
         self.old_dump = Dump(abspath=old_dump)
 
-        # padding_old = self.old_dump.get_fix_data(self.old_dump.list_sig_paddings, padding=True)
-        misc_t_old = self.old_dump.get_misc_data(self.old_dump.list_sig_misc_t)
+        misc_t_old = self.old_dump.get_misc_data()
         # n_var_full_old = self.old_dump.find_get_for_fix_data(self.old_dump.list_sig_n_var_full, n_offset=32)
 
         if not misc_t_old:
             mb.showerror("error", "mutable data not found")
             return
 
-        mb.showinfo("info", "Open new BIOS dump")
-
-        new_dump = self.open_file()
-        if new_dump == -1:
-            mb.showerror("error", "can't open file")
-            return
-        self.new_dump = Dump(abspath=new_dump)
-
-        # padding_new = self.new_dump.get_fix_data(self.new_dump.list_sig_paddings, padding=True, save_full=True)
-        misc_t_new = self.new_dump.get_misc_data(self.new_dump.list_sig_misc_t, save_full=True)
-        # n_var_full_new = self.new_dump.find_get_for_fix_data(self.new_dump.list_sig_n_var_full, n_offset=32)
+        misc_t_new = self.image.get_misc_data(save_full=True)
+        # n_var_full_new = self.image.find_get_for_fix_data(self.new_dump.list_sig_n_var_full, n_offset=32)
 
         if not misc_t_new:
             mb.showerror("error", "mutable data not found")
             return None
 
-        if self.new_dump.is_check_data(misc_t_new, misc_t_old):
-            self.new_dump.dump_full = self.new_dump.dump_full.replace(misc_t_new, misc_t_old)
-        elif self.new_dump.is_check_data(n_var_full_new, n_var_full_old):
-            self.new_dump.dump_full = self.new_dump.dump_full.replace(n_var_full_new, n_var_full_old)
+        if self.image.is_check_data(misc_t_new, misc_t_old):
+            self.image.dump_full = self.image.dump_full.replace(misc_t_new, misc_t_old)
+        elif self.image.is_check_data(n_var_full_new, n_var_full_old):
+            self.image.dump_full = self.image.dump_full.replace(n_var_full_new, n_var_full_old)
         else:
             mb.showerror("error", "variable data does not match size")
 
-        file_name = self.save_file(sufix="MISC")
+        file_name = self.choice_dir(sufix="MISC")
         if not file_name:
             return
 
         with open(file_name, "w+b") as file:
-            file.write(self.new_dump.dump_full)
+            file.write(self.image.dump_full)
             name_file_save = os.path.basename(file_name).rsplit(".", 1)[0]
             label_save = tk.Label(root, justify=tk.LEFT, text=self.msg_save_file.format(name_file_save),
-                                       fg="grey", font="Verdana 10")
-            label_save.place(x=5, y=120)
-            self.label_list.append(label_save)
+                                  fg="grey", font="Verdana 10")
+            label_save.place(x=5, y=220)
+            self.list_to_clear.append(label_save)
+
+    def verbose_cam(self, file_name):
+
+        def download(url):
+            webbrowser.open_new(url)
+
+        def uefi_tool(event):
+            subprocess.Popen(['uefitool//UEFITool.exe', '-new-tab'])
+
+        name_file_save = os.path.basename(file_name).rsplit(".", 1)[0]
+
+        label_save = tk.Label(root, justify=tk.LEFT,
+                              text=self.msg_save_file.format(name_file_save),
+                              fg="grey", font="Verdana 10")
+        label_save.place(x=2, y=230)
+        self.list_to_clear.append(label_save)
+
+        var = tk.StringVar()
+        label_info = tk.Label(root, justify=tk.LEFT, textvariable=var,
+                              fg="orange", font="Verdana 10")
+        var.set("Don't forget to change DXE_driver_UsbCameraCtrlDxe!")
+        label_info.place(x=2, y=290)
+        self.list_to_clear.append(label_info)
+
+        label_download = tk.Label(root, justify=tk.LEFT, text="Download UsbCameraCtrlDxe",
+                                  fg="blue", cursor="hand2")
+        label_download.pack()
+        label_download.place(x=5, y=310)
+        uri = "https://mega.nz/file/Hx1RUI5J#thRGIXVtGsVisbDJ0VphQ7jrCGhpMW2dyH_Ga0M_4UQ"
+        label_download.bind("<Button-1>", lambda e: download(uri))
+        self.list_to_clear.append(label_download)
+
+        label_uefitool = tk.Label(root, justify=tk.LEFT, text="Open UEFITool",
+                                  fg="green", cursor="hand2")
+        label_uefitool.pack()
+        label_uefitool.place(x=5, y=330)
+        label_uefitool.bind("<Button-1>", uefi_tool)
+        self.list_to_clear.append(label_uefitool)
 
     def unlock_cam(self):
         """
         Fix camera
         :return: None
         """
-        self.clean_label()
+        self.clear_window()
 
-        file = self.open_file()
-
-        if file == -1:
-            mb.showerror("error", "can't open file")
-            return
-
-        self.new_dump = Dump(abspath=file)
-
-        with open(file, "r+b") as f:
+        with open(self.image.path, "r+b") as f:
             with mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as mm_dump:
 
                 # amit
                 # search nvar mod
-                amit_dump = self.new_dump.find_get_data_n_var(mm_instance=mm_dump, signature=self.new_dump.sig_amit,
-                                                              size=self.new_dump.ful_size_amit, offset_n=11)
+                amit_dump = self.image.find_get_data_n_var(mm_instance=mm_dump, signature=self.image.sig_amit,
+                                                           size=self.image.ful_size_amit, offset_n=11)
 
                 # n_var_full
-                high_n_var_ind = mm_dump.rfind(self.new_dump.sig_nvar_full, int('840048', 16))
-                low_n_var_ind = mm_dump.find(self.new_dump.sig_nvar_full, int('840048', 16))
+                high_n_var_ind = mm_dump.rfind(self.image.sig_nvar_full, int('840048', 16))
+                low_n_var_ind = mm_dump.find(self.image.sig_nvar_full, int('840048', 16))
                 _logger.debug(F"Find\n"
                               F"high index = {hex(high_n_var_ind)}\n"
                               F"low index = {hex(low_n_var_ind)}")
                 mm_dump.seek(high_n_var_ind)
 
                 # read nvar mod from dump
-                nvar_mod_dump = mm_dump.read(self.new_dump.ful_size_nvar)
+                nvar_mod_dump = mm_dump.read(self.image.ful_size_nvar)
 
                 # cam driver
                 # cam_dump_ind = mm_dump.find(self.dump_obj.sig_drv_cam)
@@ -420,10 +415,10 @@ class Main(tk.Frame):
 
                         # amit_data
                         # search nvar AMIT for fix pswd
-                        amit_data = self.new_dump.find_get_data_n_var(mm_instance=mm_n_var_data,
-                                                                      signature=self.new_dump.sig_amit,
-                                                                      size=self.new_dump.ful_size_amit,
-                                                                      offset_n=11)
+                        amit_data = self.image.find_get_data_n_var(mm_instance=mm_n_var_data,
+                                                                   signature=self.image.sig_amit,
+                                                                   size=self.image.ful_size_amit,
+                                                                   offset_n=11)
                         assert len(amit_data) == len(amit_dump)
 
                         mm_n_var_data.seek(0)
@@ -435,51 +430,16 @@ class Main(tk.Frame):
                         assert len(nvar_mod_data) == mm_n_var_data.size()
                         if len(nvar_mod_data) == mm_n_var_data.size():
                             mm_dump.seek(0)
-                            self.new_dump.dump_full = mm_dump.read()
+                            self.image.dump_full = mm_dump.read()
                             # self.dump_obj.dump_full = self.dump_obj.dump_full.replace(cam_dump, cam_data)
 
-                            file_name = self.save_file(sufix="CAM")
+                            file_name = self.choice_dir(sufix="CAM")
                             if not file_name:
                                 return
 
-                            def download(url):
-                                webbrowser.open_new(url)
-
-                            def uefi_tool(event):
-                                subprocess.Popen(['uefitool//UEFITool.exe', '-new-tab'])
-
                             with open(file_name, "w+b") as file:
-                                file.write(self.new_dump.dump_full.replace(nvar_mod_dump, nvar_mod_data))
-
-                                name_file_save = os.path.basename(file_name).rsplit(".", 1)[0]
-
-                                label_save = tk.Label(root, justify=tk.LEFT,
-                                                      text=self.msg_save_file.format(name_file_save),
-                                                      fg="grey", font="Verdana 10")
-                                label_save.place(x=2, y=120)
-                                self.label_list.append(label_save)
-
-                                var = tk.StringVar()
-                                label_info = tk.Label(root, justify=tk.LEFT, textvariable=var,
-                                                           fg="orange", font="Verdana 10")
-                                var.set("Don't forget to change DXE_driver_UsbCameraCtrlDxe!")
-                                label_info.place(x=2, y=180)
-                                self.label_list.append(label_info)
-
-                                label_download = tk.Label(root, justify=tk.LEFT, text="Download UsbCameraCtrlDxe",
-                                                           fg="blue", cursor="hand2")
-                                label_download.pack()
-                                label_download.place(x=5, y=200)
-                                uri = "https://mega.nz/file/Hx1RUI5J#thRGIXVtGsVisbDJ0VphQ7jrCGhpMW2dyH_Ga0M_4UQ"
-                                label_download.bind("<Button-1>", lambda e: download(uri))
-                                self.label_list.append(label_download)
-
-                                label_uefitool = tk.Label(root, justify=tk.LEFT, text="Open UEFITool",
-                                                          fg="green", cursor="hand2")
-                                label_uefitool.pack()
-                                label_uefitool.place(x=5, y=220)
-                                label_uefitool.bind("<Button-1>", uefi_tool)
-                                self.label_list.append(label_uefitool)
+                                file.write(self.image.dump_full.replace(nvar_mod_dump, nvar_mod_data))
+                                self.verbose_cam(file_name)
 
                         else:
                             mb.showerror(title="Size Error", message="inconsistency of sizes NVRAM_NVAR")
