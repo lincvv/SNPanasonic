@@ -40,7 +40,6 @@ class Main(tk.Frame):
         super().__init__(_root, *args, **kwargs)
         self.root = _root
         self.home_dir = os.getcwd()
-        self.msg_save_file = "[*] SAVE FILE\n[*] {0}\n[*] OK"
         self.image = None
         self.read_img = None
         self.save_img = None
@@ -49,7 +48,6 @@ class Main(tk.Frame):
         self.unlock_cam_img = None
         self.fix_misc_img = None
         self.clear_me_img = None
-        self.lbl_open_file = None
         self.btn_save = None
         self.field_sn = None
         self.old_dump = None
@@ -118,7 +116,15 @@ class Main(tk.Frame):
             return file_path.name
         return -1
 
-    def verbose_me(self, *, txt_label, fg="grey", x=2, y):
+    def verbose_log(self, *, txt_label, fg="grey", x=2, y):
+        """
+
+        :param txt_label:
+        :param fg:
+        :param x:
+        :param y:
+        :return: None
+        """
         label_me = tk.Label(root, text=txt_label, fg=fg, font="Verdana 10")
         label_me.place(x=x, y=y)
         self.list_to_clear.append(label_me)
@@ -135,7 +141,7 @@ class Main(tk.Frame):
         me_file = self.open_file()
         dir_output = self.image.path
         if me_file != -1:
-            self.verbose_me(txt_label=f"[*] ME file: {me_file}", y=230)
+            self.verbose_log(txt_label=f"[*] ME file: {me_file}", y=230)
             wd = os.getcwd()
             current_dir = PurePath(wd)
             if current_dir.parts[-1] != "fit11":
@@ -159,11 +165,11 @@ class Main(tk.Frame):
                 if fit_status is not None:
                     _logger.debug(F"FIT status ==> {fit_status}")
                     if fit_status == 5002:
-                        self.verbose_me(txt_label=F"[*] ERROR: Invalid input file type.", y=260, fg="red")
+                        self.verbose_log(txt_label=F"[*] ERROR: Invalid input file type.", y=260, fg="red")
                         break
                     elif fit_proc.poll() == 0:
-                        self.verbose_me(txt_label=F"[*] Full Flash image written to ==>", y=260, fg="green")
-                        self.verbose_me(txt_label=F"\t{output_path}", y=280)
+                        self.verbose_log(txt_label=F"[*] Full Flash image written to ==>", y=260, fg="green")
+                        self.verbose_log(txt_label=F"\t{output_path}", y=280)
                         mv_source_dir = PurePath(self.image.path)
                         mv_destination_dir = PurePath.joinpath(PurePath(output_path).parent,
                                                                datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
@@ -172,7 +178,7 @@ class Main(tk.Frame):
                         subprocess.run(F"mv {mv_source_dir.stem} {mv_destination_dir}")
                         break
                     else:
-                        self.verbose_me(txt_label=F"[*] ERROR: Build Failed!", y=260, fg="red")
+                        self.verbose_log(txt_label=F"[*] ERROR: Build Failed!", y=260, fg="red")
                         break
 
     def choice_dir(self, sufix):
@@ -316,6 +322,10 @@ class Main(tk.Frame):
                         _logger.debug(name_model)
                         return name_model
 
+    def print_log_write_file(self, file_name):
+        self.verbose_log(txt_label=F"[*] Modify image written to ==>", y=260, fg="green")
+        self.verbose_log(txt_label=F"\t{file_name}", y=280)
+
     def fix_misc(self):
         """
         fixes data for MISC driver
@@ -360,11 +370,8 @@ class Main(tk.Frame):
 
         with open(file_name, "w+b") as file:
             file.write(self.image.dump_full)
-            name_file_save = os.path.basename(file_name).rsplit(".", 1)[0]
-            label_save = tk.Label(root, justify=tk.LEFT, text=self.msg_save_file.format(name_file_save),
-                                  fg="green", font="Verdana 10")
-            label_save.place(x=5, y=220)
-            self.list_to_clear.append(label_save)
+            # name_file_save = os.path.basename(file_name).rsplit(".", 1)[0]
+            self.print_log_write_file(file_name)
 
     def verbose_cam(self, file_name):
 
@@ -374,25 +381,19 @@ class Main(tk.Frame):
         def uefi_tool(event):
             subprocess.Popen(['uefitool//UEFITool.exe', '-new-tab'])
 
-        name_file_save = os.path.basename(file_name).rsplit(".", 1)[0]
-
-        label_save = tk.Label(root, justify=tk.LEFT,
-                              text=self.msg_save_file.format(name_file_save),
-                              fg="grey", font="Verdana 10")
-        label_save.place(x=2, y=230)
-        self.list_to_clear.append(label_save)
+        self.print_log_write_file(file_name)
 
         var = tk.StringVar()
         label_info = tk.Label(root, justify=tk.LEFT, textvariable=var,
                               fg="orange", font="Verdana 10")
         var.set("Don't forget to change DXE_driver_UsbCameraCtrlDxe!")
-        label_info.place(x=2, y=290)
+        label_info.place(x=2, y=310)
         self.list_to_clear.append(label_info)
 
         label_download = tk.Label(root, justify=tk.LEFT, text="Download UsbCameraCtrlDxe",
                                   fg="blue", cursor="hand2")
         label_download.pack()
-        label_download.place(x=5, y=310)
+        label_download.place(x=5, y=330)
         uri = "https://mega.nz/file/Hx1RUI5J#thRGIXVtGsVisbDJ0VphQ7jrCGhpMW2dyH_Ga0M_4UQ"
         label_download.bind("<Button-1>", lambda e: download(uri))
         self.list_to_clear.append(label_download)
@@ -400,7 +401,7 @@ class Main(tk.Frame):
         label_uefitool = tk.Label(root, justify=tk.LEFT, text="Open UEFITool",
                                   fg="green", cursor="hand2")
         label_uefitool.pack()
-        label_uefitool.place(x=5, y=330)
+        label_uefitool.place(x=5, y=350)
         label_uefitool.bind("<Button-1>", uefi_tool)
         self.list_to_clear.append(label_uefitool)
 
@@ -485,7 +486,7 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = Main(root)
     app.pack()
-    root.title("PanasonicTool 1.4a")
+    root.title("PanasonicTool 1.4b")
     root.geometry("350x450+400+200")
     root.resizable(False, False)
     root.geometry("380x450")
