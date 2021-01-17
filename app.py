@@ -141,10 +141,12 @@ class Main(tk.Frame):
             if current_dir.parts[-1] != "fit11":
                 os.chdir("fit11")
             output_path = F"{PurePath(dir_output).parent}/{PurePath(dir_output).stem}_CleanME.bin"
+            # -w<path>               Overrides the $WorkingDir environment variable.
+            # -s<path>               Overrides the $SourceDir environment variable
             fit_proc = subprocess.Popen(f"fit.exe -b -o {output_path} "
                                         f"-f {self.image} "
                                         f"-me {me_file}")
-            progress = Progressbar(root, orient=HORIZONTAL, length=150, mode='indeterminate')
+            progress = Progressbar(root, orient=HORIZONTAL, length=100, mode='indeterminate')
             progress.place(x=50, y=260)
             self.list_to_clear.append(progress)
 
@@ -159,7 +161,7 @@ class Main(tk.Frame):
                     if fit_status == 5002:
                         self.verbose_me(txt_label=F"[*] ERROR: Invalid input file type.", y=260, fg="red")
                         break
-                    if fit_proc.poll() == 0:
+                    elif fit_proc.poll() == 0:
                         self.verbose_me(txt_label=F"[*] Full Flash image written to ==>", y=260, fg="green")
                         self.verbose_me(txt_label=F"\t{output_path}", y=280)
                         mv_source_dir = PurePath(self.image.path)
@@ -168,6 +170,9 @@ class Main(tk.Frame):
                         _logger.debug(F"build dir ==> {mv_destination_dir}")
                         subprocess.run(F"mkdir {mv_destination_dir}")
                         subprocess.run(F"mv {mv_source_dir.stem} {mv_destination_dir}")
+                        break
+                    else:
+                        self.verbose_me(txt_label=F"[*] ERROR: Build Failed!", y=260, fg="red")
                         break
 
     def choice_dir(self, sufix):
