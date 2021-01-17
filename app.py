@@ -78,7 +78,7 @@ class Main(tk.Frame):
                                  compound=tk.TOP, image=self.read_key_img)
         btn_read_key.pack(side=tk.LEFT, padx=2)
 
-        self.clear_me_img = tk.PhotoImage(file='img/save.gif')
+        self.clear_me_img = tk.PhotoImage(file='img/me.gif')
         btn_me = tk.Button(toolbar, text="ME", bg="#FFFFFF", bd=2, command=self.clear_me,
                            compound=tk.TOP, image=self.clear_me_img)
         btn_me.pack(side=tk.LEFT, padx=2)
