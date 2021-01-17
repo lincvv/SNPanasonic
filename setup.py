@@ -10,7 +10,7 @@ include_files = ["img", "data", "uefitool", r"C:\Python38\DLLs\tcl86t.dll", r"C:
 excludes = ['unittest', 'email', 'html', 'http', 'urllib', 'xml', 'pydoc', 'doctest', 'argparse', 'datetime',
             'zipfile', 'pickle', 'locale', 'calendar', 'base64', 'gettext', 'bz2', 'getopt',
             'stringprep', 'quopri', 'copy', 'imp']
-packages = ["os", "binascii", "mmap", 'subprocess', 'logging', 'webbrowser', 'pathlib']
+packages = ['os', 'binascii', 'mmap', 'subprocess', 'logging', 'webbrowser', 'pathlib', 'time', 'datetime']
 
 setup(
     name="PanasonicTool",

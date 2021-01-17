@@ -1,3 +1,4 @@
+import datetime
 import logging
 import mmap
 import os
@@ -6,8 +7,10 @@ import subprocess
 import tkinter as tk
 import webbrowser
 from pathlib import PurePath
-from tkinter import filedialog as fd
+from tkinter import filedialog as fd, HORIZONTAL
 from tkinter import messagebox as mb
+from tkinter.ttk import Progressbar
+
 from main import Dump
 
 # 0x280020 - 19MK3
@@ -36,6 +39,7 @@ class Main(tk.Frame):
     def __init__(self, _root, *args, **kwargs):
         super().__init__(_root, *args, **kwargs)
         self.root = _root
+        self.home_dir = os.getcwd()
         self.msg_save_file = "[*] SAVE FILE\n[*] {0}\n[*] OK"
         self.image = None
         self.read_img = None
@@ -114,8 +118,8 @@ class Main(tk.Frame):
             return file_path.name
         return -1
 
-    def verbose_me(self, *, txt_label, x=2, y):
-        label_me = tk.Label(root, text=txt_label, fg="grey", font="Verdana 10")
+    def verbose_me(self, *, txt_label, fg="grey", x=2, y):
+        label_me = tk.Label(root, text=txt_label, fg=fg, font="Verdana 10")
         label_me.place(x=x, y=y)
         self.list_to_clear.append(label_me)
 
@@ -133,15 +137,38 @@ class Main(tk.Frame):
         if me_file != -1:
             self.verbose_me(txt_label=f"[*] ME file: {me_file}", y=230)
             wd = os.getcwd()
-            fit_dir = PurePath(wd)
-            if fit_dir.parts[-1] != "fit11":
+            current_dir = PurePath(wd)
+            if current_dir.parts[-1] != "fit11":
                 os.chdir("fit11")
             output_path = F"{PurePath(dir_output).parent}/{PurePath(dir_output).stem}_CleanME.bin"
-            subprocess.run(f"fit.exe -b -o {output_path} "
-                           f"-f {self.image} "
-                           f"-me {me_file}")
-            self.verbose_me(txt_label=F"[*] Full Flash image written to ==>", y=260)
-            self.verbose_me(txt_label=F"\t{output_path}", y=280)
+            fit_proc = subprocess.Popen(f"fit.exe -b -o {output_path} "
+                                        f"-f {self.image} "
+                                        f"-me {me_file}")
+            progress = Progressbar(root, orient=HORIZONTAL, length=100, mode='indeterminate')
+            progress.place(x=50, y=260)
+            self.list_to_clear.append(progress)
+
+            import time
+            while True:
+                progress['value'] += 20
+                root.update_idletasks()
+                time.sleep(0.5)
+                fit_status = fit_proc.poll()
+                if fit_status is not None:
+                    _logger.debug(F"FIT status ==> {fit_status}")
+                    if fit_status == 5002:
+                        self.verbose_me(txt_label=F"[*] ERROR: Invalid input file type.", y=260, fg="red")
+                        break
+                    if fit_proc.poll() == 0:
+                        self.verbose_me(txt_label=F"[*] Full Flash image written to ==>", y=260, fg="green")
+                        self.verbose_me(txt_label=F"\t{output_path}", y=280)
+                        mv_source_dir = PurePath(self.image.path)
+                        mv_destination_dir = PurePath.joinpath(PurePath(output_path).parent,
+                                                               datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
+                        _logger.debug(F"build dir ==> {mv_destination_dir}")
+                        subprocess.run(F"mkdir {mv_destination_dir}")
+                        subprocess.run(F"mv {mv_source_dir.stem} {mv_destination_dir}")
+                        break
 
     def choice_dir(self, sufix):
         """
@@ -270,7 +297,7 @@ class Main(tk.Frame):
         except ValueError:
             mb.showerror("error", "у-п-с.... \n incorrect serial number")
         else:
-            label_save = tk.Label(root, text=F"[*] Write serial number.....OK", fg="grey", font="Verdana 10")
+            label_save = tk.Label(root, text=F"[*] Write serial number.....OK", fg="green", font="Verdana 10")
             label_save.place(x=2, y=220)
             self.list_to_clear.append(label_save)
             self.create_save_btn(fg="black", bg="#32a852")
@@ -330,7 +357,7 @@ class Main(tk.Frame):
             file.write(self.image.dump_full)
             name_file_save = os.path.basename(file_name).rsplit(".", 1)[0]
             label_save = tk.Label(root, justify=tk.LEFT, text=self.msg_save_file.format(name_file_save),
-                                  fg="grey", font="Verdana 10")
+                                  fg="green", font="Verdana 10")
             label_save.place(x=5, y=220)
             self.list_to_clear.append(label_save)
 
@@ -411,6 +438,7 @@ class Main(tk.Frame):
                 #             print(2)
 
                 # read nvar mod from data/NVRAM_NVAR_store_full.ffs
+                os.chdir(self.home_dir)
                 with open("data/NVRAM_NVAR_store_full.ffs", "r+b") as f_nvar:
                     with mmap.mmap(f_nvar.fileno(), 0, access=mmap.ACCESS_READ) as mm_n_var_data:
                         if mm_n_var_data.size() != len(nvar_mod_dump):
