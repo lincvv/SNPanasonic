@@ -88,10 +88,10 @@ class Main(tk.Frame):
             self.btn_save.destroy()
 
         self.btn_save = tk.Button(root, text="SAVE", bg=bg, bd=3, command=self.save_serial,
-                                  fg=fg, height=1, width=19)
+                                  fg=fg, height=1, width=18)
 
         self.btn_save.pack()
-        self.btn_save.place(x=100, y=185)
+        self.btn_save.place(x=102, y=185)
 
     def clear_window(self):
         """
@@ -136,9 +136,12 @@ class Main(tk.Frame):
             fit_dir = PurePath(wd)
             if fit_dir.parts[-1] != "fit11":
                 os.chdir("fit11")
-            subprocess.run(f"fit.exe -b -o {PurePath(dir_output).parent}/{PurePath(dir_output).stem}_CleanME.bin "
+            output_path = F"{PurePath(dir_output).parent}/{PurePath(dir_output).stem}_CleanME.bin"
+            subprocess.run(f"fit.exe -b -o {output_path} "
                            f"-f {self.image} "
                            f"-me {me_file}")
+            self.verbose_me(txt_label=F"[*] Full Flash image written to ==>", y=260)
+            self.verbose_me(txt_label=F"\t{output_path}", y=280)
 
     def choice_dir(self, sufix):
         """
@@ -166,7 +169,7 @@ class Main(tk.Frame):
         file = self.open_file()
         if file != -1:
             font = "Verdana 10"
-            self.field_sn = tk.Text(root, width=20, height=1.4, font=font, bd=3)
+            self.field_sn = tk.Text(root, width=17, height=1.4, font=font, bd=3)
             label_sn = tk.Label(root, text="Current SN:", fg="grey", font=font)
             self.serial_number = self.get_serial_number(file)
             if self.serial_number is None:
@@ -212,9 +215,9 @@ class Main(tk.Frame):
         with open(self.image.path, "r+b") as f:
             with mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as mm:
                 key = self.pattern_key.findall(mm)
-                font = "Verdana 10"
+                font = "Verdana 9"
                 y_tf = 230
-                field_oem = tk.Text(root, width=20, height=1.4, font=font, bd=3)
+                field_oem = tk.Text(root, width=30, height=1.4, font=font, bd=2)
                 label_oem = tk.Label(root, text="OEM Key:", fg="grey", font=font)
                 if not key:
                     msg_info = "OEM Product Key not found"
