@@ -144,7 +144,7 @@ class Main(tk.Frame):
             fit_proc = subprocess.Popen(f"fit.exe -b -o {output_path} "
                                         f"-f {self.image} "
                                         f"-me {me_file}")
-            progress = Progressbar(root, orient=HORIZONTAL, length=100, mode='indeterminate')
+            progress = Progressbar(root, orient=HORIZONTAL, length=150, mode='indeterminate')
             progress.place(x=50, y=260)
             self.list_to_clear.append(progress)
 
