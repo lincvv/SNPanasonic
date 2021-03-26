@@ -7,10 +7,10 @@ os.environ['TCL_LIBRARY'] = "C:\\Python38\\tcl\\tcl8.6"
 os.environ['TK_LIBRARY'] = "C:\\Python38\\tcl\\tk8.6"
 
 include_files = ["img", "data", "uefitool", r"C:\Python38\DLLs\tcl86t.dll", r"C:\Python38\DLLs\tk86t.dll"]
-excludes = ['unittest', 'email', 'html', 'http', 'urllib', 'xml', 'pydoc', 'doctest', 'argparse',
+excludes = ['unittest', 'email', 'html', 'http', 'xml', 'pydoc', 'doctest', 'argparse',
             'zipfile', 'pickle', 'locale', 'calendar', 'base64', 'gettext', 'bz2', 'getopt',
             'stringprep', 'quopri', 'copy', 'imp']
-packages = ['os', 'binascii', 'mmap', 'subprocess', 'logging', 'webbrowser', 'pathlib', 'time', 'datetime']
+packages = ['os', 'binascii', 'mmap', 'subprocess', 'logging', 'webbrowser', 'pathlib', 'time', 'datetime', 'urllib']
 
 setup(
     name="PanasonicTool",
