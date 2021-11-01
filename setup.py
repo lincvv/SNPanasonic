@@ -6,7 +6,7 @@ __version__ = "1.4b"
 os.environ['TCL_LIBRARY'] = "C:\\Python38\\tcl\\tcl8.6"
 os.environ['TK_LIBRARY'] = "C:\\Python38\\tcl\\tk8.6"
 
-include_files = ["img", "data", "uefitool", r"C:\Python38\DLLs\tcl86t.dll", r"C:\Python38\DLLs\tk86t.dll"]
+include_files = ["img", "data", "uefitool", r"C:\Python38\DLLs\tcl86t.dll", r"C:\Python38\DLLs\tk86t.dll", "fit11"]
 excludes = ['unittest', 'email', 'html', 'http', 'xml', 'pydoc', 'doctest', 'argparse',
             'zipfile', 'pickle', 'locale', 'calendar', 'base64', 'gettext', 'bz2', 'getopt',
             'stringprep', 'quopri', 'copy', 'imp']
