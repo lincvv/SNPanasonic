@@ -300,7 +300,7 @@ class Main(tk.Frame):
             return
         current_sn = self.field_sn.get(0.1, "end")
 
-        file_name = self.choice_dir(sufix="NEW_SN_")
+        file_name = self.choice_dir(sufix="new_sn_")
         if not file_name:
             return
         try:
@@ -364,7 +364,7 @@ class Main(tk.Frame):
         else:
             mb.showerror("error", "variable data does not match size")
 
-        file_name = self.choice_dir(sufix="MISC")
+        file_name = self.choice_dir(sufix="misc")
         if not file_name:
             return
 
